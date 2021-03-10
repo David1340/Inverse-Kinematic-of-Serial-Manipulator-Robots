@@ -134,7 +134,7 @@ ax =  fig.add_subplot(111, projection = '3d')
 
 #variaveis
 n = 3
-destino = np.array([[1.2,1,1.2]]).T
+destino = np.array([[1,1,1]]).T
 
 #vetores colunas do sistema de coordenadas global
 i = np.array([[1,0,0,1]]).T
@@ -185,34 +185,34 @@ plot2(o,o1_0,o2_0,o3_0,destino)
 p = np.concatenate((o.T,o1_0.T,o2_0.T,o3_0.T),axis = 0)
 
 #primeira interação
-v1 = np.array([p[3] - p[1]]).T#vetor 1 que define o plano
+v1 = np.array([p[3] - p[1]]).T#vetor 1 que define o plano, junta2 -> efetuador
 v1 = norma(v1)
 
-v2 = np.array(destino.T - p[1]).T#vetor 2 que define o plano
+v2 = np.array(destino.T - p[1]).T#vetor 2 que define o plano, junta2 -> destino
 v2 = norma(v2) 
 n3 = matriz_antissimetrica(v1)@v2#vetor normal ao plano
 n3 = norma(n3)
 
-v3 = np.array(destino.T - p[2]).T
+v3 = np.array(p[2] - destino.T).T#vetor do destino para junta 3
 v3 = norma(v3)
-proj = (n3.T@v3)*n3
-proj = norma(proj)
 o3_0 = destino
 
-o2_0_new = o3_0 - v3
+o2_0_new = o3_0 + v3
 
+d = -p[1].dot(n3) #parâmetro d da equação do plano
+
+d_pnew_plano = o2_0_new.T@n3 + d
+o2_0_new2 = o2_0_new - d_pnew_plano*n3
+v4 = o2_0_new2 - o3_0 
+v4 = norma(v4)
+o2_0_new3 = o3_0 + v4
 #plot do plano
-d = -p[1].dot(n3)
-
-o2_0_new2 = (n3.T@v3 + d)/(np.sqrt(np.sum(p[1]*)))
 
 # create x,y
 xx, yy = np.meshgrid(range(-2,2), range(-2,2))
 
 # calculate corresponding z
 z = (-n3[0] * xx - n3[1] * yy - d) * 1. /n3[2]
-
-
 
 plt.pause(1)
 fig = plt.figure('2')
@@ -221,11 +221,11 @@ ax.plot_surface(xx, yy, z, alpha=0.2)
 #ax.clear()
 plot2(o,o1_0,o2_0,o2_0,o2_0)
 plot2(o2_0_new,o3_0,o3_0,o3_0,o3_0)
-plt.scatter(o2_0_new2[0],o2_0_new2[1],o2_0_new2[2],'red')
+plt.plot([o2_0_new2[0,0],o3_0[0,0]],[o2_0_new2[1,0],o3_0[1,0]],[o2_0_new2[2,0],o3_0[2,0]])
+#fig.canvas.draw()
+plt.pause(100)
+   
 
-    
 
 
 
-
-    
