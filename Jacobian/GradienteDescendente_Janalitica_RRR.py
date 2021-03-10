@@ -1,10 +1,9 @@
 #Este código é baseado na figura 1.8 do livro do Spong
+import random 
+import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
-from math import cos, sin, sqrt, pi, atan2 
-import numpy as np
-import math
-import random 
+from math import cos,sin,sqrt,pi,atan2 
 
 #transforma uma matriz A m x n em uma matriz  3 x 3
 def M_3x3(A):
@@ -77,7 +76,7 @@ def plotagem(a,b,c,d,t):
     plt.plot([a[0,0],b[0,0]],[a[1,0],b[1,0]],[a[2,0],b[2,0]])
     plt.plot([b[0,0],c[0,0]],[b[1,0],c[1,0]],[b[2,0],c[2,0]])
     plt.plot([c[0,0],d[0,0]],[c[1,0],d[1,0]],[c[2,0],d[2,0]])
-
+    
     #Plotando Juntas
     ax.scatter(a[0,0],a[1,0],a[2,0])
     ax.scatter(b[0,0],b[1,0],b[2,0])
@@ -110,7 +109,7 @@ ax =  fig.add_subplot(111, projection = '3d')
 
 #variaveis
 cont = 0
-c = 0.05 #tamanho do passo
+c = 0.1 #tamanho do passo
 destino = np.array([[1.2,1,1.2]]).T
 
 #vetores colunas do sistema de coordenadas global
@@ -138,10 +137,10 @@ for v in range(1000):
     a1 = 0
     a2 = b2
     a3 = b3
-    alfa1 = math.pi/2
+    alfa1 = pi/2
     alfa2 = 0
     alfa3 = 0
-    theta1 = math.pi/2 + q[0]
+    theta1 = pi/2 + q[0]
     theta2 = q[1] 
     theta3 = q[2]
 
