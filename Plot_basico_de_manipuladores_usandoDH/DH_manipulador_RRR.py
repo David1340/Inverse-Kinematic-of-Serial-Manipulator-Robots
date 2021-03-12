@@ -1,7 +1,7 @@
 #Este código é baseado na figura 1.8 do livro do Spong
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
-from math import cos, sin 
+from math import cos, sin, sqrt, pi
 import numpy as np
 import math
 
@@ -12,6 +12,19 @@ def matrix_homogenea(d,a,alfa,theta):
     L4 = np.array([0,0,0,1])
     A = np.array([L1,L2,L3,L4])
     return A
+
+def plot_junta_revolucao(A):
+    r = 0.05
+    theta = np.arange(0,2*pi,0.1)
+    z = np.linspace(-0.1,0.1,np.size(theta))
+    z, theta = np.meshgrid(z, theta)
+    x = r*np.cos(theta)*A[0,0] + r*np.sin(theta)*A[0,1] + \
+     z*A[0,2] + np.ones_like(z)*A[0,3]
+    y = r*np.cos(theta)*A[1,0] + r*np.sin(theta)*A[1,1] + \
+     z*A[1,2] + np.ones_like(z)*A[1,3]
+    z = r*np.cos(theta)*A[2,0] + r*np.sin(theta)*A[2,1] + \
+     z*A[2,2] + np.ones_like(z)*A[2,3]
+    ax.plot_surface(x, y, z,color = 'blue', alpha = 1)
 
 #configurando o plot
 fig = plt.figure()
@@ -27,7 +40,6 @@ o = np.array([[0,0,0,1]]).T #origem
 b1 = 1
 b2 = 0.5
 b3 = 0.5
-
 ##parametros dinamicos
 angulo1 = float(input('Digite o valor da junta 1 em Graus: ')) * math.pi/180 
 angulo2 = float(input('Digite o valor da junta 2 em Graus: ')) * math.pi/180 
@@ -61,31 +73,30 @@ o2_2 = o
 o1_0 = A1@o1_1
 o2_0 = A1@(A2@o2_2)
 o3_0 = A1@(A2@(A3@o3_3))
-print(A1@A2@A3)
 
 #Plotando Elos
-plt.plot([o[0,0],o1_0[0,0]],[o[1,0],o1_0[1,0]],[o[2,0],o1_0[2,0]])
-plt.plot([o1_0[0,0],o2_0[0,0]],[o1_0[1,0],o2_0[1,0]],[o1_0[2,0],o2_0[2,0]])
-plt.plot([o2_0[0,0],o3_0[0,0]],[o2_0[1,0],o3_0[1,0]],[o2_0[2,0],o3_0[2,0]])
+plt.plot([o[0,0],o1_0[0,0]],[o[1,0],o1_0[1,0]],[o[2,0],o1_0[2,0]],'blue')
+plt.plot([o1_0[0,0],o2_0[0,0]],[o1_0[1,0],o2_0[1,0]],[o1_0[2,0],o2_0[2,0]],'blue')
+plt.plot([o2_0[0,0],o3_0[0,0]],[o2_0[1,0],o3_0[1,0]],[o2_0[2,0],o3_0[2,0]],'blue')
 
 
 #Plotando Juntas
-ax.scatter(o[0,0],o[1,0],o[2,0])
-ax.scatter(o1_0[0,0],o1_0[1,0],o1_0[2,0])
-ax.scatter(o2_0[0,0],o2_0[1,0],o2_0[2,0])
+plot_junta_revolucao(np.eye(4))
+plot_junta_revolucao(A1)
+plot_junta_revolucao(A1@A2)
 
 #Plotando efetuador
 ax.scatter(o3_0[0,0],o3_0[1,0],o3_0[2,0])
 #Legendas
-plt.legend(['Elo 1','Elo 2','Elo 3','Junta 1 (Revolucao)', 'Junta 2 (Revolucao)'\
-            ,'Junta 3 (Revolucao)','Efetuador'])
+#plt.legend(['Elo 1','Elo 2','Elo 3','Junta 1 (Revolucao)', 'Junta 2 (Revolucao)'\
+#            ,'Junta 3 (Revolucao)','Efetuador'])
 ax.set_xlabel('Eixo x')
 ax.set_ylabel('Eixo y')
 ax.set_zlabel('Eixo z')
 #titulo
 plt.title('Manipulador RRR')
-ax.set_xlim3d(0,2)
-ax.set_ylim3d(0,2)
+ax.set_xlim3d(-1,1)
+ax.set_ylim3d(-1,1)
 ax.set_zlim3d(0,2)
 plt.show()
 
