@@ -1,9 +1,9 @@
+# %%
 #Este código é baseado na figura 1.8 do livro do Spong
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
 from math import cos, sin, sqrt, pi, atan2
 import numpy as np
-import math
 import random 
 
 def matriz_antissimetrica(v):
@@ -61,9 +61,10 @@ def orientacao(A):
 #Função que plota o manipulador, quando recebe os pontos de interesse
 def plot(a,b,c,d,t):
     #Plotando Elos
-    plt.plot([a[0,0],b[0,0]],[a[1,0],b[1,0]],[a[2,0],b[2,0]])
-    plt.plot([b[0,0],c[0,0]],[b[1,0],c[1,0]],[b[2,0],c[2,0]])
-    plt.plot([c[0,0],d[0,0]],[c[1,0],d[1,0]],[c[2,0],d[2,0]])
+    px = [a[0,0],b[0,0],c[0,0],d[0,0]]
+    py = [a[1,0],b[1,0],c[1,0],d[1,0]]
+    pz = [a[2,0],b[2,0],c[2,0],d[2,0]]
+    plt.plot(px,py,pz,'blue')
 
     #Plotando Juntas
     ax.scatter(a[0,0],a[1,0],a[2,0])
@@ -75,8 +76,7 @@ def plot(a,b,c,d,t):
 
     ax.scatter(t[0],t[1],t[2])
     #Legendas
-    #plt.legend(['Elo 1','Elo 2','Elo 3','Junta 1 (Revolucao)','Junta 2 (Revolucao)'\
-    #            ,'Junta 3 (Revolucao)','Efetuador','objetivo'])
+    plt.legend(['Manipulador','P0','P1','P2','P3','objetivo'])
 
     ax.set_xlabel('Eixo x')
     ax.set_ylabel('Eixo y')
@@ -86,9 +86,10 @@ def plot(a,b,c,d,t):
     plt.title('Manipulador RRR')
     ax.set_xlim3d(-2,2)
     ax.set_ylim3d(-2,2)
-    ax.set_zlim3d(0,4)
+    ax.set_zlim3d(0,3)
     fig.canvas.draw() #mostra o plot
     plt.pause(0.001)
+    #plt.pause(100)
 
 
 #Função que plota o manipulador, quando recebe os pontos de interesse
@@ -97,18 +98,18 @@ def plot2(a,b,c,d,t):
     px = [a[0,0],b[0,0],c[0,0],d[0,0]]
     py = [a[1,0],b[1,0],c[1,0],d[1,0]]
     pz = [a[2,0],b[2,0],c[2,0],d[2,0]]
-    plt.plot(px,py,pz,'blue')
+    plt.plot(px,py,pz,)
     
     #Plotando Juntas
-    px2 = [a[0,0],b[0,0],c[0,0]]
-    py2 = [a[1,0],b[1,0],c[1,0]]
-    pz2 = [a[2,0],b[2,0],c[2,0]]
-    ax.scatter(px2,py2,pz2,'blue')
+    #px2 = [a[0,0],b[0,0],c[0,0]]
+    #py2 = [a[1,0],b[1,0],c[1,0]]
+    #pz2 = [a[2,0],b[2,0],c[2,0]]
+    #ax.scatter(px2,py2,pz2,'blue')
 
     #Plotando efetuador
-    ax.scatter(d[0,0],d[1,0],d[2,0],'blue')
+    #ax.scatter(d[0,0],d[1,0],d[2,0],'blue')
     #plotando destino
-    ax.scatter(t[0],t[1],t[2],'blue')
+    #ax.scatter(t[0],t[1],t[2],'blue')
     #Legendas
     
     #plt.legend(['Elo 1','Elo 2','Elo 3','Junta 1 (Revolucao)','Junta 2 (Revolucao)'\
@@ -122,19 +123,19 @@ def plot2(a,b,c,d,t):
     plt.title('Manipulador RRR')
     ax.set_xlim3d(-2,2)
     ax.set_ylim3d(-2,2)
-    ax.set_zlim3d(0,4)
+    ax.set_zlim3d(0,3)
     fig.canvas.draw() #mostra o plot
-    plt.pause(0.001)
+    #plt.pause(0.001)
+
 
 #configurando o plot
 plt.ion()
 fig = plt.figure('1')
 ax =  fig.add_subplot(111, projection = '3d')
-#plt.pause(0.01)
 
 #variaveis
 n = 3
-destino = np.array([[1,1,1]]).T
+destino = np.array([[1.5,1.5,1]]).T
 
 #vetores colunas do sistema de coordenadas global
 i = np.array([[1,0,0,1]]).T
@@ -173,16 +174,17 @@ A2 = matrix_homogenea(d2,a2,alfa2,theta2)
 A3 = matrix_homogenea(d3,a3,alfa3,theta3)
 A = (A1@A2@A3)
 
-#Encontrando os pontos de interesse no sistema Global
-o1_1 = o #origem do SC 1
-o2_2 = o #origem do SC 2
-o3_3 = o #origem do SC 3
-o1_0 = v_3d(A1@o1_1)
-o2_0 = v_3d(A1@(A2@o2_2))
-o3_0 = v_3d(A1@(A2@(A3@o3_3)))
-o = v_3d(o)
-plot2(o,o1_0,o2_0,o3_0,destino)
-p = np.concatenate((o.T,o1_0.T,o2_0.T,o3_0.T),axis = 0)
+p0 = o # #origem do SC 0#Encontrando os pontos de interesse no sistema Global
+
+p1_1 = o #origem do SC 1
+p2_2 = o #origem do SC 2
+p3_3 = o #origem do SC 3
+p1_0 = v_3d(A1@p1_1)
+p2_0 = v_3d(A1@(A2@p2_2))
+p3_0 = v_3d(A1@(A2@(A3@p3_3)))
+p0 = v_3d(p0)
+plot(p0,p1_0,p2_0,p3_0,destino)
+p = np.concatenate((p0.T,p1_0.T,p2_0.T,p3_0.T),axis = 0)
 
 #primeira interação
 v1 = np.array([p[3] - p[1]]).T#vetor 1 que define o plano, junta2 -> efetuador
@@ -195,22 +197,20 @@ n3 = norma(n3)
 
 v3 = np.array(p[2] - destino.T).T#vetor do destino para junta 3
 v3 = norma(v3)
-o3_0 = destino
+p3_0 = destino
 
-o2_0_new = o3_0 + v3
+p2_0_new = p3_0 + v3
 
 d = -p[1].dot(n3) #parâmetro d da equação do plano
 
-d_pnew_plano = o2_0_new.T@n3 + d
-o2_0_new2 = o2_0_new - d_pnew_plano*n3
-v4 = o2_0_new2 - o3_0 
+d_pnew_plano = p2_0_new.T@n3 + d
+p2_0_new2 = p2_0_new - d_pnew_plano*n3
+v4 = p2_0_new2 - p3_0 
 v4 = norma(v4)
-o2_0_new3 = o3_0 + v4
+p2_0_new3 = p3_0 + v4
 #plot do plano
-
 # create x,y
 xx, yy = np.meshgrid(range(-2,2), range(-2,2))
-
 # calculate corresponding z
 z = (-n3[0] * xx - n3[1] * yy - d) * 1. /n3[2]
 
@@ -219,13 +219,20 @@ fig = plt.figure('2')
 ax =  fig.add_subplot(111, projection = '3d')
 ax.plot_surface(xx, yy, z, alpha=0.2)
 #ax.clear()
-plot2(o,o1_0,o2_0,o2_0,o2_0)
-plot2(o2_0_new,o3_0,o3_0,o3_0,o3_0)
-plt.plot([o2_0_new2[0,0],o3_0[0,0]],[o2_0_new2[1,0],o3_0[1,0]],[o2_0_new2[2,0],o3_0[2,0]])
+plot2(p0,p1_0,p2_0,p2_0,p2_0) #parte de baixo
+plot2(p2_0_new,p3_0,p3_0,p3_0,p3_0) #parte de cima antes de projetar
+plot2(p2_0_new3,p3_0,p3_0,p3_0,p3_0) #parte de cima depois de projetar
+ax.scatter(p0[0,0],p0[1,0],p0[2,0])
+ax.scatter(p1_0[0,0],p1_0[1,0],p1_0[2,0])
+ax.scatter(p2_0[0,0],p2_0[1,0],p2_0[2,0])
+ax.scatter(p2_0_new[0,0],p2_0_new[1,0],p2_0_new[2,0])
+ax.scatter(p2_0_new3[0,0],p2_0_new3[1,0],p2_0_new3[2,0])
+ax.scatter(p3_0[0,0],p3_0[1,0],p3_0[2,0])
+plt.legend(['Manipulador','Manipulador','Manipulador','Plano','P0'\
+            ,'P1','P2','P2^','P2*','P3'])
 #fig.canvas.draw()
-plt.pause(100)
+#plt.pause(1000)
    
 
-
-
+# %%
 
