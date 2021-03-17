@@ -13,17 +13,19 @@ def matrix_homogenea(d,a,alfa,theta):
     A = np.array([L1,L2,L3,L4])
     return A
 
-def plot_junta_revolucao(A):
+def plot_junta_revolucao(A,p):
+    #A matriz de Rotação, p origem da junta no seu sistema de coordenadas
     r = 0.05
-    theta = np.arange(0,2*pi,0.1)
-    z = np.linspace(-0.1,0.1,np.size(theta))
-    z, theta = np.meshgrid(z, theta)
-    x = r*np.cos(theta)*A[0,0] + r*np.sin(theta)*A[0,1] + \
-     z*A[0,2] + np.ones_like(z)*A[0,3]
-    y = r*np.cos(theta)*A[1,0] + r*np.sin(theta)*A[1,1] + \
-     z*A[1,2] + np.ones_like(z)*A[1,3]
-    z = r*np.cos(theta)*A[2,0] + r*np.sin(theta)*A[2,1] + \
-     z*A[2,2] + np.ones_like(z)*A[2,3]
+    theta = np.arange(0,2*pi,0.1) #theta de 0 a 2pi com passos de 0.1
+    z = np.linspace(-0.1,0.1,np.size(theta))#z de 0.1 a 0.1 com o numero de elementos iguais ao de theta
+    z, theta = np.meshgrid(z, theta) #transforma em vetores 2D causa do plot de superficie
+    #[x,y,z].T = A@([x,y,z].T + p)
+    x = (r*np.cos(theta) + p[0,0])*A[0,0] + (r*np.sin(theta) + p[1,0])*A[0,1] + \
+     (z + p[2,0])*A[0,2] + np.ones_like(z)*A[0,3]
+    y = (r*np.cos(theta) + p[0,0])*A[1,0] + (r*np.sin(theta) + p[1,0])*A[1,1] + \
+     (z + p[2,0])*A[1,2] + np.ones_like(z)*A[1,3]
+    z = (r*np.cos(theta) + p[0,0])*A[2,0] + (r*np.sin(theta) + p[1,0])*A[2,1] + \
+     (z + p[2,0])*A[2,2] + np.ones_like(z)*A[2,3]
     ax.plot_surface(x, y, z,color = 'blue', alpha = 1)
 
 #configurando o plot
@@ -31,9 +33,6 @@ fig = plt.figure()
 ax =  fig.add_subplot(111, projection = '3d')
 
 #vetores colunas do sistema de coordenadas global
-i = np.array([[1,0,0,1]]).T
-j = np.array([[0,1,0,1]]).T
-k = np.array([[0,0,1,1]]).T
 o = np.array([[0,0,0,1]]).T #origem
 
 ##Parametros dos robos
@@ -81,9 +80,9 @@ plt.plot([o2_0[0,0],o3_0[0,0]],[o2_0[1,0],o3_0[1,0]],[o2_0[2,0],o3_0[2,0]],'blue
 
 
 #Plotando Juntas
-plot_junta_revolucao(np.eye(4))
-plot_junta_revolucao(A1)
-plot_junta_revolucao(A1@A2)
+plot_junta_revolucao(np.eye(4),o)
+plot_junta_revolucao(A1,o)
+plot_junta_revolucao(A1@A2,o)
 
 #Plotando efetuador
 ax.scatter(o3_0[0,0],o3_0[1,0],o3_0[2,0])
@@ -99,4 +98,5 @@ ax.set_xlim3d(-1,1)
 ax.set_ylim3d(-1,1)
 ax.set_zlim3d(0,2)
 plt.show()
+plt.pause(500)
 
