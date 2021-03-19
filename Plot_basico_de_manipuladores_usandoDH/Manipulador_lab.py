@@ -63,13 +63,13 @@ b6 = 0.1
 b7 = 0.2
 
 #parametros dinamicos
-angulo1 = float(input('Digite o valor da junta 1 em Graus: ')) * pi/180 
-angulo2 = float(input('Digite o valor da junta 2 em Graus: ')) * pi/180 
-angulo3 = float(input('Digite o valor da junta 3 em Graus: ')) * pi/180
-angulo4 = float(input('Digite o valor da junta 4 em Graus: ')) * pi/180 
-angulo5 = float(input('Digite o valor da junta 5 em Graus: ')) * pi/180 
-angulo6 = float(input('Digite o valor da junta 6 em Graus: ')) * pi/180
-angulo7 = float(input('Digite o valor da junta 7 em Graus: ')) * pi/180
+angulo1 = float(input('Digite o valor da junta 1 em Graus: ')) #* pi/180 
+angulo2 = float(input('Digite o valor da junta 2 em Graus: ')) #* pi/180 
+angulo3 = float(input('Digite o valor da junta 3 em Graus: ')) #* pi/180
+angulo4 = float(input('Digite o valor da junta 4 em Graus: ')) #* pi/180 
+angulo5 = float(input('Digite o valor da junta 5 em Graus: ')) #* pi/180 
+angulo6 = float(input('Digite o valor da junta 6 em Graus: ')) #* pi/180
+angulo7 = float(input('Digite o valor da junta 7 em Graus: ')) #* pi/180
 
 #parametros de DH
 d1 = b1 
@@ -178,6 +178,7 @@ plt.title('Pioneer 7DOF')
 ax.set_xlim3d(-0.5,0.5)
 ax.set_ylim3d(-0.5,0.5)
 ax.set_zlim3d(0,1)
+print(o7_0)
 plt.show()
 
 
