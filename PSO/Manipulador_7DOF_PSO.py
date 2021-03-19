@@ -31,22 +31,47 @@ def orientação(A):
     result = np.array([R,P,Y])
     return result
 
-def plot_junta_revolucao(A,p):
+def plot_junta_revolucao(A,p,c):
     #A matriz de Rotação, p origem da junta no seu sistema de coordenadas
     r = 0.025
     h = 0.05
-    theta = np.arange(0,2*pi + 0.12,0.4) #theta de 0 a 2pi com passos de 0.1
-    z = np.linspace(-h,h,np.size(theta))#z de 0.1 a 0.1 com o numero de elementos iguais ao de theta
-    z, theta = np.meshgrid(z, theta) #transforma em vetores 2D por causa do plot de superficie
-    #[x,y,z].T = A@([x,y,z].T + p)
-    x = (r*np.cos(theta) + p[0,0])*A[0,0] + (r*np.sin(theta) + p[1,0])*A[0,1] + \
-     (z + p[2,0])*A[0,2] + np.ones_like(z)*A[0,3]
-    y = (r*np.cos(theta) + p[0,0])*A[1,0] + (r*np.sin(theta) + p[1,0])*A[1,1] + \
-     (z + p[2,0])*A[1,2] + np.ones_like(z)*A[1,3]
-    z = (r*np.cos(theta) + p[0,0])*A[2,0] + (r*np.sin(theta) + p[1,0])*A[2,1] + \
-     (z + p[2,0])*A[2,2] + np.ones_like(z)*A[2,3]
-    ax.plot_surface(x, y, z,color = 'blue', alpha = 1)
-
+    theta = np.arange(0,2*pi + 0.12,0.8) #theta de 0 a 2pi com passos de 0.1
+    if(c == 'z'):  
+        z = np.linspace(0,h,np.size(theta))#z de 0.1 a 0.1 com o numero de elementos iguais ao de theta
+        z, theta = np.meshgrid(z, theta) #transforma em vetores 2D por causa do plot de superficie
+        #[x,y,z].T = A@([x,y,z].T + p)
+        x = (r*np.cos(theta) + p[0,0])*A[0,0] + (r*np.sin(theta) + p[1,0])*A[0,1] + \
+         (z + p[2,0])*A[0,2] + np.ones_like(z)*A[0,3]
+        y = (r*np.cos(theta) + p[0,0])*A[1,0] + (r*np.sin(theta) + p[1,0])*A[1,1] + \
+         (z + p[2,0])*A[1,2] + np.ones_like(z)*A[1,3]
+        z = (r*np.cos(theta) + p[0,0])*A[2,0] + (r*np.sin(theta) + p[1,0])*A[2,1] + \
+         (z + p[2,0])*A[2,2] + np.ones_like(z)*A[2,3]
+        ax.plot_surface(x, y, z,color = 'blue', alpha = 1)
+        
+    elif(c == 'y'):
+        y = np.linspace(-h,h,np.size(theta))#z de 0.1 a 0.1 com o numero de elementos iguais ao de theta
+        y, theta = np.meshgrid(y, theta) #transforma em vetores 2D por causa do plot de superficie
+        #[x,y,z].T = A@([x,y,z].T + p)
+        x = (r*np.cos(theta) + p[0,0])*A[0,0] + (r*np.sin(theta) + p[2,0])*A[0,2] + \
+         (y + p[1,0])*A[0,1] + np.ones_like(y)*A[0,3]
+        z = (r*np.cos(theta) + p[0,0])*A[2,0] + (r*np.sin(theta) + p[2,0])*A[2,2] + \
+         (y + p[1,0])*A[2,1] + np.ones_like(y)*A[2,3]
+        y = (r*np.cos(theta) + p[0,0])*A[1,0] + (r*np.sin(theta) + p[2,0])*A[1,2] + \
+         (y + p[1,0])*A[1,1] + np.ones_like(y)*A[1,3]
+        ax.plot_surface(x, y, z,color = 'blue', alpha = 1)
+        
+    elif(c == 'x'):
+        x = np.linspace(-h,h,np.size(theta))#z de 0.1 a 0.1 com o numero de elementos iguais ao de theta
+        x, theta = np.meshgrid(x, theta) #transforma em vetores 2D por causa do plot de superficie
+        #[x,y,z].T = A@([x,y,z].T + p)
+        y = (r*np.cos(theta) + p[2,0])*A[1,2] + (r*np.sin(theta) + p[1,0])*A[1,1] + \
+         (x + p[0,0])*A[1,0] + np.ones_like(x)*A[1,3]
+        z = (r*np.cos(theta) + p[2,0])*A[2,2] + (r*np.sin(theta) + p[1,0])*A[2,1] + \
+         (x + p[0,0])*A[2,0] + np.ones_like(x)*A[2,3]
+        x = (r*np.cos(theta) + p[2,0])*A[0,2] + (r*np.sin(theta) + p[1,0])*A[0,1] + \
+         (x + p[0,0])*A[0,0] + np.ones_like(x)*A[0,3]
+        ax.plot_surface(x, y, z,color = 'blue', alpha = 1)
+        
 def plot(qbest,t):
     #Comprimento dos elos do manipulador
     b1 = 0.2 #20 cm
@@ -156,17 +181,17 @@ def plot(qbest,t):
              ,[e1_0[2,0],e2_0[2,0],e3_0[2,0],e4_0[2,0],e3_0[2,0],p8_0[2,0],p7_0[2,0]],'blue')
     
     #Plotando objetivo    
-    ax.scatter(t[0],t[1],t[2],'yellow')
+    ax.scatter(t[0],t[1],t[2],'red')
     
     #Plotando Juntas e base    
-    plot_junta_revolucao(np.eye(4),p)
-    plot_junta_revolucao(T1,p1_1)
-    plot_junta_revolucao(T2,p2_2)
-    plot_junta_revolucao(T3,p3_3)
-    plot_junta_revolucao(T4,p4_4)
-    plot_junta_revolucao(T5,p5_5)
-    plot_junta_revolucao(T6,p6_6)
-    plot_junta_revolucao(T7,p7_7)
+    plot_junta_revolucao(np.eye(4),p,'z')
+    plot_junta_revolucao(T1,p1_1,'y')
+    plot_junta_revolucao(T2,p2_2,'y')
+    plot_junta_revolucao(T3,p3_3,'y')
+    plot_junta_revolucao(T4,p4_4,'y')
+    plot_junta_revolucao(T5,p5_5,'y')
+    plot_junta_revolucao(T6,p6_6,'y')
+    plot_junta_revolucao(T7,p7_7,'y')
 
     ax.set_xlabel('Eixo x(m)')
     ax.set_ylabel('Eixo y(m)')
@@ -315,8 +340,9 @@ def PSO(o,o2,number,n,L):
                 #print("qbest: ",q[i].p,"\n\n")
                 qbest = q[i].p.copy()
                 f = q[i].f
-        plot(qbest,o)       
-        if(f <= 0.015):
+        plot(qbest,o)
+        #plot(q[0].p,o)
+        if(f <= 0.001):
             print("Solução: ",qbest,"em ",j + 1, "interações.\n\n")
             print(f)
             break;        
@@ -331,12 +357,14 @@ ax =  fig.add_subplot(111, projection = '3d')
 plt.pause(0.1)
 
 #objetivo
-objetivo = np.array([0.2,0.5,0.6]) #posiçãp
+objetivo = np.array([0.2,0.5,0.6]) #posição
 objetivo2 = np.array([0,0,0]) #orientação
 numero_particulas = 200
 dimensao = 7 #dimensão do robô
 
-#restrições de cada ângulp angulos
+#restrições de cada ângulo
 c = pi/12 
 L = [(pi)-c,pi/2,(pi)-c,(pi)-c,(pi)-c,(pi)-c,(pi)-c]
 solucao = PSO(objetivo,objetivo2,numero_particulas,dimensao,L)
+print('Solução q = ', solucao)
+
