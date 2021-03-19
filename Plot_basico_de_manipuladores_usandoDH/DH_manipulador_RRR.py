@@ -64,9 +64,9 @@ A2 = matrix_homogenea(d2,a2,alfa2,theta2)
 A3 = matrix_homogenea(d3,a3,alfa3,theta3)
 
 #Pontos de interesse
-o1_1 = o
-o3_3 = o
-o2_2 = o
+o1_1 = o #junta 2
+o2_2 = o #junta 3
+o3_3 = o #ponto do centro do efetuador
 
 #Encontrando os pontos de interesse no sistema Global
 o1_0 = A1@o1_1
@@ -87,8 +87,6 @@ plot_junta_revolucao(A1@A2,o)
 #Plotando efetuador
 ax.scatter(o3_0[0,0],o3_0[1,0],o3_0[2,0])
 #Legendas
-#plt.legend(['Elo 1','Elo 2','Elo 3','Junta 1 (Revolucao)', 'Junta 2 (Revolucao)'\
-#            ,'Junta 3 (Revolucao)','Efetuador'])
 ax.set_xlabel('Eixo x')
 ax.set_ylabel('Eixo y')
 ax.set_zlabel('Eixo z')
