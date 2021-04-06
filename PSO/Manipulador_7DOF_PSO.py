@@ -346,6 +346,7 @@ def PSO(o,o2,number,n,L):
             print("Solução: ",qbest,"em ",j + 1, "interações.\n\n")
             print(f)
             break;        
+    
     print(f)
     return qbest
 
