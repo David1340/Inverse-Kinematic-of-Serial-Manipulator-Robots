@@ -1,11 +1,11 @@
 # %%
 from math import cos, sin, sqrt, pi, atan2
 import numpy as np
-import math
 import random 
 import rospy
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header
+
 #transforma uma matriz A m x n em uma matriz  3 x 7
 def M_3x7(A):
     L1 = np.array([A[0,0],A[0,1],A[0,2],A[0,3],A[0,4],A[0,5],A[0,6]])
@@ -71,8 +71,7 @@ def Ja(J,B):#Usando como entrada a matriz B(alpha) e a Jacobiana analitica eh ca
     A = np.array([L1,L2,L3,L4,L5,L6])
     return A@J
 
-#configurando o plot
-
+#configurando o Rviz
 pub = rospy.Publisher('joint_states', JointState, queue_size=10)
 rospy.init_node('joint_state_publisher')
 rate = rospy.Rate(10) # 10hz
