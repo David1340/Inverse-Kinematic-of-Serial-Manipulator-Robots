@@ -86,7 +86,7 @@ hello_str.effort = []
 
 #variaveis
 cont = 0
-alfa = 0.15 #tamanho do passo
+alfa = 0.1 #tamanho do passo
 destino = np.array([[0.5,0.4,0.3]]).T
 
 #vetores colunas do sistema de coordenadas global
@@ -184,6 +184,21 @@ while not rospy.is_shutdown():
         o6_0 = T6@o6_6
         o7_0 = T7@o7_7
         p_0 = A@p_7
+
+       #atualiaza os angulos do manipulador no Rviz
+        hello_str.header.stamp = rospy.Time.now()
+        hello_str.position = [q[0,0],q[1,0],q[2,0],q[3,0],q[4,0],q[5,0],q[6,0],0,0]
+        pub.publish(hello_str)
+        rate.sleep()        
+        
+        #Calcula a distancia entre o efetuador a o objetivo(Posição)
+        erro = distancia(p_0,destino,3)
+
+        #Condição de parada
+        if(erro < 0.001):
+            print('Solucao q: \n',q,'\nNumero de iteracoes:',v)
+            break   
+
         #os vetores z serao transformados em vetores linhas no R^3, para poder ser usado a funcao np.cross
         z0_0 = v_3d(k).T
         z1_0 = v_3d(T1@k).T
@@ -235,18 +250,8 @@ while not rospy.is_shutdown():
         e = np.array([f[0,0],f[1,0],f[2,0]])
         q = q - alfa*((J.T@np.linalg.inv(J@J.T))@f) #pseudo inversa a direita
         #q = q - alfa*((np.linalg.inv(J.T@J))@J.T@f) pseudo inversa a esquerda
-        erro = distancia(p_0,destino,3)
-
-        hello_str.header.stamp = rospy.Time.now()
-        hello_str.position = [q[0,0],q[1,0],q[2,0],q[3,0],q[4,0],q[5,0],q[6,0],0,0]
-        pub.publish(hello_str)
-        rate.sleep()
-
-        if(erro < 0.001):
-            print('Solucao q: \n',q,'\nNumero de iteracoes:',v)
-            break
     break    
-
+print('\n Posicao: ',p_0)
 
 
 
