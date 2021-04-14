@@ -74,7 +74,7 @@ def Ja(J,B):#Usando como entrada a matriz B(alpha) e a Jacobiana analitica eh ca
 #configurando o Rviz
 pub = rospy.Publisher('joint_states', JointState, queue_size=10)
 rospy.init_node('joint_state_publisher')
-rate = rospy.Rate(1000) # 10hz
+rate = rospy.Rate(100) # 10hz 
 hello_str = JointState()
 hello_str.header = Header()
 hello_str.header.stamp = rospy.Time.now()
@@ -86,10 +86,12 @@ hello_str.effort = []
 
 #variaveis
 cont = 0
-alfa = 0.3 #tamanho do passo
+alfa = 0.1 #tamanho do passo
+qmax = 0.1 #passo maximo entre atualizacoes das juntas AINDA NAO IMPLEMENTEI
+qlim = pi #valor maximo que a junta pode assumir
 lambida = 0.05
 I = np.eye(3)
-destino = np.array([[0.7,0.5,0.3]]).T
+destino = np.array([[0.5,0.4,0.3]]).T
 
 #vetores colunas do sistema de coordenadas global
 i = np.array([[1,0,0,1]]).T
@@ -98,13 +100,13 @@ k = np.array([[0,0,1,1]]).T
 o = np.array([[0,0,0,1]]).T #origem
 
 #angulos de juntas iniciais
-q1 = 2*pi*random.random()
-q2 = 2*pi*random.random()
-q3 = 2*pi*random.random()
-q4 = 2*pi*random.random()
-q5 = 2*pi*random.random()
-q6 = 2*pi*random.random()
-q7 = 2*pi*random.random()
+q1 = pi*random.uniform(-qlim,qlim)
+q2 = pi*random.uniform(-qlim,qlim)
+q3 = pi*random.uniform(-qlim,qlim)
+q4 = pi*random.uniform(-qlim,qlim)
+q5 = pi*random.uniform(-qlim,qlim)
+q6 = pi*random.uniform(-qlim,qlim)
+q7 = pi*random.uniform(-qlim,qlim)
 q = np.array([[q1,q2,q3,q4,q5,q6,q7]]).T
 
 #Comprimento dos elos do manipulador
@@ -252,6 +254,11 @@ while not rospy.is_shutdown():
         e = np.array([f[0,0],f[1,0],f[2,0]])
         q = q - alfa*((J.T@np.linalg.inv(J@J.T))@f) #pseudo inversa a direita
         #q = q - alfa*((np.linalg.inv(J.T@J))@J.T@f) pseudo inversa a esquerda
+        for i2 in range(np.size(q)):
+            if(q[i2] > qlim):
+                q[i2] = q[i2] -qlim
+            elif(q[i2] < -qlim):
+                q[i2] = -q[i2] + qlim
     break    
 print('\n',p_0)
 
