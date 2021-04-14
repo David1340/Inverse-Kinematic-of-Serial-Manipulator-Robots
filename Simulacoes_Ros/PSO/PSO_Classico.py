@@ -19,33 +19,32 @@ def matriz_homogenea(d,a,alfa,theta):
     return A
 
 def distancia(a,b,n):
+    #calcula a distância euclidiana entre dois pontos no R^n
     d = 0
     for i in range(n):
         d = d + (a[i] - b[i])**2      
     return sqrt(d)
 
 def orientação(A):
-     #calcular os ângulos de orientação na conversão Z -> Y -> X
-    R = atan2(A[1,0],A[0,0])
-    P = atan2(-A[2,0],sqrt((A[2,1]**2)+(A[2,2]**2)))
-    Y = atan2(A[2,1],A[2,2])
+    #calcular os ângulos de orientação na conversão Z -> Y -> X
+    R = atan2(A[1,0],A[0,0]) #Roll
+    P = atan2(-A[2,0],sqrt((A[2,1]**2)+(A[2,2]**2))) #Pitch
+    Y = atan2(A[2,1],A[2,2]) #Yaw
     result = np.array([R,P,Y])
     return result
             
 class particle:
     def __init__(self,position,dimension):
-        self.p = position #current position
-        self.v = np.zeros(dimension) #current velocity
-        self.bp = position.copy() #best position
-        self.n = dimension
-        self.d = 0 #currente distance
-        self.o = np.array([0,0,0])
-        self.f = 500 #current fitness fuction
-        self.bf = self.f #best fitness fuction
+        self.p = position #posição atual da particula/configuração do robô
+        self.v = np.zeros(dimension) #velocidade atual da particula
+        self.bp = position.copy() #melhor posição que a particula ja esteve
+        self.n = dimension #dimensão da particula
+        self.d = 0 #Diferença em módulo da distância atual para a desejada
+        self.o = np.array([0,0,0]) #Diferença em módulo da orientação atual para a desejada
+        self.f = 500 #Função de custo/fitnees atual da particula
+        self.bf = self.f #Melhor valor de função de custo da obtida pela particula
 
-    def update_position(self,qbest,L): #Update the particle position
-        #c1 = 1.4047
-        #c2 = 1.494
+    def update_position(self,qbest,L): #Atualiza a posição da particula/configuração do robô
         c1 = 1 #grupo
         c2 = 2 #individual
         for i in range(self.n):
@@ -64,7 +63,8 @@ class particle:
                 self.p[i] = -L[i]
        
             
-    def update_fuction(self,o,o2): #Calcule the value of the fitness fuction
+    def update_fuction(self,o,o2): #Calcula a função de custo/fitness da particula
+        #(posição,orientação) da pose desejada
         #Parâmetros físicos do robô, comprimento dos links
         b1 = 0.2 #20 cm
         b2 = 0.1
@@ -121,13 +121,13 @@ class particle:
         #posição do efetuador em relação ao sistema de coordenadas global
         p = A@p
 
-        #orientação
+        #calculo do erro em módulo da orientação desejada e da particula
         self.o = distancia(orientação(A),o2,3)
 
         #calculo da distancia euclidiana da posição do efetuador em relação ao objetivo
         self.d = distancia(p.T,o,3)
 
-        #função de custo       
+        #Calculo da função de custo       
         k1 = 0.2 #orientação
         k2 = 0.8 #posição
         self.f = (k1*self.o) + (k2*self.d)
@@ -147,7 +147,7 @@ def PSO(o,o2,number,n,L):
         q.append(particle(p,n))
         q[i].update_fuction(o,o2)
 
-    #Criando a configuração qbest e sua distancia
+    #Criando a configuração qbest e sua função de custo 
     qbest = q[0].p.copy()
     f = q[0].f
     for i in range(number):
@@ -161,16 +161,16 @@ def PSO(o,o2,number,n,L):
             q[i].update_position(qbest,L)
             q[i].update_fuction(o,o2)
             
-            if(f > q[i].f):
-                #print("d: ",q[i].d,"\n")
-                #print("o: ",q[i].o,"\n")
-                #print("qbest: ",q[i].p,"\n\n")
+            #Se alguma particula possui função de custo menor do que qbest, ela se torna a qbest
+            if(f > q[i].f): 
                 qbest = q[i].p.copy()
                 f = q[i].f
+        #Atualiza a configuração do robô no Rviz
         hello_str.header.stamp = rospy.Time.now()
         hello_str.position = [qbest[0],qbest[1],qbest[2],qbest[3],qbest[4],qbest[5],qbest[6],0,0]
         pub.publish(hello_str)
         rate.sleep()
+        #Critério de parada
         if(f <= 0.001):
             print("Solução: ",qbest,"em ",j + 1, "interações.\n\n")
             print(f)
@@ -183,7 +183,7 @@ def PSO(o,o2,number,n,L):
 #configurando o Rviz
 pub = rospy.Publisher('joint_states', JointState, queue_size=10)
 rospy.init_node('joint_state_publisher')
-rate = rospy.Rate(10) # 10hz
+rate = rospy.Rate(100) # 10hz
 hello_str = JointState()
 hello_str.header = Header()
 hello_str.header.stamp = rospy.Time.now()
