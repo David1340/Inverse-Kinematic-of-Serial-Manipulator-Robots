@@ -6,18 +6,6 @@ import rospy
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header
 
-#transforma uma matriz A m x n em uma matriz  3 x 7
-def M_3x7(A):
-    L1 = np.array([A[0,0],A[0,1],A[0,2],A[0,3],A[0,4],A[0,5],A[0,6]])
-    L2 = np.array([A[1,0],A[1,1],A[1,2],A[1,3],A[1,4],A[1,5],A[1,6]])
-    L3 = np.array([A[2,0],A[2,1],A[2,2],A[2,3],A[2,4],A[2,5],A[2,6]])
-    H = np.array([L1,L2,L3])
-    return H
-                    
-#transforma um vetor v n x 1 em um vetor 3 x 1
-def v_3d(v):
-    return np.array([v[0],v[1],v[2]])
-
 #Retorna a Matriz de transformacao Homogeneadados  usando como entrada os parametros de DH
 def matriz_homogenea(d,a,alfa,theta):
     L1 = np.array([round(cos(theta),4), round(-sin(theta)*cos(alfa),4), round(sin(theta)*sin(alfa),4),round(a*cos(theta),4)])
@@ -25,6 +13,17 @@ def matriz_homogenea(d,a,alfa,theta):
     L3 = np.array([0, round(sin(alfa),4), round(cos(alfa),4), d])
     L4 = np.array([0,0,0,1])
     A = np.array([L1,L2,L3,L4])
+    return A
+
+def matriz_antissimetrica(a):
+    #A = [0,-az,ay ; az,0,-ax ; -ay,ax,0]
+    A = np.zeros((3,3))
+    A[0,1] = -a[2,0]
+    A[0,2] = a[1,0]
+    A[1,2] = -a[0,0]
+    A[1,0] = - A[0,1]
+    A[2,0] = - A[0,2]
+    A[2,1] = - A[1,2]
     return A
 
 #Calcula a distancia Euclidiana entre dois pontos no R^n
@@ -201,54 +200,38 @@ while not rospy.is_shutdown():
             print('Solucao q: \n',q,'\nNumero de iteracoes:',v)
             break   
 
-        #os vetores z serao transformados em vetores linhas no R^3, para poder ser usado a funcao np.cross
-        z0_0 = v_3d(k).T
-        z1_0 = v_3d(T1@k).T
-        z2_0 = v_3d(T2@k).T
-        z3_0 = v_3d(T3@k).T
-        z4_0 = v_3d(T4@k).T
-        z5_0 = v_3d(T5@k).T
-        z6_0 = v_3d(T6@k).T
-        #z7_0 = v_3d(T7@k).T nao eh usado
+        #os vetores z serao transformados em vetores  no R^3
+        z0_0 = k[0:3]
+        z1_0 = (T1@k)[0:3]
+        z2_0 = (T2@k)[0:3]
+        z3_0 = (T3@k)[0:3]
+        z4_0 = (T4@k)[0:3]
+        z5_0 = (T5@k)[0:3]
+        z6_0 = (T6@k)[0:3]
+        #z7_0 = (T7@k)[0:3] nao eh usado
 
-        aux = (v_3d(o7_0) - v_3d(o)).T
-        aux = np.cross(z0_0,aux)
-        J = np.array([np.concatenate((aux,z0_0),axis = None)])
+        #cálculo do Jacobiano analitico
+        J = np.zeros([6,7])
+        #produto vetorial de Z0_0 por (o7_0 - o) 
+        J[0:3,0] = matriz_antissimetrica(z0_0)@(o7_0[0:3] - o[0:3])[:,0]
+        J[3:6,0] = z0_0[:,0]
+        J[0:3,1] = matriz_antissimetrica(z1_0)@(o7_0[0:3] - o1_0[0:3])[:,0]
+        J[3:6,1] = z1_0[:,0]
+        J[0:3,2] = matriz_antissimetrica(z2_0)@(o7_0[0:3] - o2_0[0:3])[:,0]
+        J[3:6,2] = z2_0[:,0]
+        J[0:3,3] = matriz_antissimetrica(z3_0)@(o7_0[0:3] - o3_0[0:3])[:,0]
+        J[3:6,3] = z3_0[:,0]
+        J[0:3,4] = matriz_antissimetrica(z4_0)@(o7_0[0:3] - o4_0[0:3])[:,0]
+        J[3:6,4] = z4_0[:,0]
+        J[0:3,5] = matriz_antissimetrica(z5_0)@(o7_0[0:3] - o5_0[0:3])[:,0]
+        J[3:6,5] = z5_0[:,0]
+        J[0:3,6] = matriz_antissimetrica(z6_0)@(o7_0[0:3] - o6_0[0:3])[:,0]
+        J[3:6,6] = z6_0[:,0]
 
-        aux = (v_3d(o7_0) - v_3d(o1_0)).T
-        aux = np.cross(z1_0,aux)
-        J2 = np.array([np.concatenate((aux,z1_0),axis = None)])
-        J = np.concatenate((J,J2),axis = 0)
-
-        aux = (v_3d(o7_0) - v_3d(o2_0)).T
-        aux = np.cross(z2_0,aux)
-        J3 = np.array([np.concatenate((aux,z2_0),axis = None)])
-        J = np.concatenate((J,J3),axis = 0)
-
-        aux = (v_3d(o7_0) - v_3d(o3_0)).T
-        aux = np.cross(z3_0,aux)
-        J4 = np.array([np.concatenate((aux,z3_0),axis = None)])
-        J = np.concatenate((J,J4),axis = 0)
-
-        aux = (v_3d(o7_0) - v_3d(o4_0)).T
-        aux = np.cross(z4_0,aux)
-        J5 = np.array([np.concatenate((aux,z4_0),axis = None)])
-        J = np.concatenate((J,J5),axis = 0)
-
-        aux = (v_3d(o7_0) - v_3d(o5_0)).T
-        aux = np.cross(z5_0,aux)
-        J6 = np.array([np.concatenate((aux,z5_0),axis = None)])
-        J = np.concatenate((J,J6),axis = 0)
-
-        aux = (v_3d(o7_0) - v_3d(o6_0)).T
-        aux = np.cross(z6_0,aux)
-        J7 = np.array([np.concatenate((aux,z6_0),axis = None)])
-        J = np.concatenate((J,J7),axis = 0)
-
-        J = J.T
-        f = (v_3d(p_0) - destino)
-        J = M_3x7(J) #foi descartado a parte da velocidade angular, porque ela nao esta sendo usada
+        f = p_0[0:3] - destino
+        J = J[0:3,:] #foi descartado a parte da velocidade angular, porque ela nao esta sendo usada
         #e caso estivesse sendo, teria que ser convertida em taxa de angulo.
+        
         e = np.array([f[0,0],f[1,0],f[2,0]])
         q = q - alfa*((J.T@np.linalg.inv(J@J.T))@f) #pseudo inversa a direita
         #q = q - alfa*((np.linalg.inv(J.T@J))@J.T@f) pseudo inversa a esquerda
