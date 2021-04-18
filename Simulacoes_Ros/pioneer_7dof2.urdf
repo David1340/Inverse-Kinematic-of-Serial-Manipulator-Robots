@@ -45,9 +45,7 @@
                <origin xyz=" 0.0 -0.125 0.0" rpy ="1.5708 0.0 0.0"/>
             </collision>
         </link>
-        <joint name="One_joint" type = "revolute">
-        <limit lower="-2.8798" upper="2.8798" effort="100.0" velocity="1.0"/>
-        <!--(pi - pi/12 = 2.8798)-->
+        <joint name="One_joint" type = "continuous">
             <parent link ="base_link"/>
             <child link ="One"/>
             <axis xyz = "0.0 1.0 0.0"/>
@@ -73,9 +71,7 @@
                <origin xyz="0.0 0.0 0.0" rpy ="1.5708  0.0 0.0"/>
             </collision>
         </link>
-        <joint name="Two_joint" type = "revolute">
-        <limit lower="-1.5708" upper="1.5708" effort="100.0" velocity="1.0"/>
-        <!--(pi/2 = 1.5708)-->
+        <joint name="Two_joint" type = "continuous">
             <parent link ="One"/>
             <child link ="Two"/>
             <axis xyz = "0.0 -1.0 0.0"/>
@@ -102,9 +98,7 @@
                 <origin xyz=" 0.0 -0.15 0.0" rpy ="1.5708 0.0 0.0"/>
             </collision>
         </link>
-        <joint name="Three_joint" type = "revolute">
-        <limit lower="-2.8798" upper="2.8798" effort="100.0" velocity="1.0"/>
-        <!--(pi - pi/12 = 2.8798)-->
+        <joint name="Three_joint" type = "continuous">
             <parent link ="Two"/>
             <child link ="Three"/>
             <axis xyz = "0.0 1.0 0.0"/>
@@ -131,9 +125,7 @@
                 <origin xyz="0.0 0.0 0.0" rpy ="1.5708  0.0 0.0"/>
             </collision>
         </link>
-        <joint name="Four_joint" type = "revolute">
-        <limit lower="-2.8798" upper="2.8798" effort="100.0" velocity="1.0"/>
-        <!--(pi - pi/12 = 2.8798)-->
+        <joint name="Four_joint" type = "continuous">
             <parent link ="Three"/>
             <child link ="Four"/>
             <axis xyz = "0.0 -1.0 0.0"/>
@@ -160,9 +152,7 @@
                 <origin xyz=" 0.0 -0.15 0.0" rpy ="1.5708 0.0 0.0"/>
             </collision>
         </link>
-        <joint name="Five_joint" type = "revolute">
-        <limit lower="-2.8798" upper="2.8798" effort="100.0" velocity="1.0"/>
-        <!--(pi - pi/12 = 2.8798)-->
+        <joint name="Five_joint" type = "continuous">
             <parent link ="Four"/>
             <child link ="Five"/>
             <axis xyz = "0.0 1.0 0.0"/>
@@ -190,9 +180,7 @@
             </collision>
         </link>
 
-        <joint name="Six_joint" type = "revolute">
-        <limit lower="-2.8798" upper="2.8798" effort="100.0" velocity="1.0"/>
-        <!--(pi - pi/12 = 2.8798)-->
+        <joint name="Six_joint" type = "continuous">
             <parent link ="Five"/>
             <child link ="Six"/>
             <axis xyz = "0.0 0.0 1.0"/>
@@ -245,9 +233,7 @@
                 <origin xyz="0.0 0.0 0.0" rpy ="1.5708 0.0 0.0"/>
             </collision>
         </link>
-        <joint name="Seven_joint" type = "revolute">
-        <limit lower="-2.8798" upper="2.8798" effort="100.0" velocity="1.0"/>
-        <!--(pi - pi/12 = 2.8798)-->
+        <joint name="Seven_joint" type = "continuous">
             <parent link ="Aux"/>
             <child link ="Seven"/>
             <axis xyz = "0.0 1.0 0.0"/>
