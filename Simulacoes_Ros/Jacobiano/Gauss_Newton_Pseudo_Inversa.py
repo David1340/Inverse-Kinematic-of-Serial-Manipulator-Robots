@@ -87,7 +87,9 @@ hello_str.effort = []
 cont = 0
 alfa = 0.1 #tamanho do passo
 qmax = 0.1 #passo maximo entre atualizacoes das juntas AINDA NAO IMPLEMENTEI
-qlim = pi #valor maximo que a junta pode assumir
+#restrições de cada ângulo
+c = pi/12 
+qlim = [(pi)-c,pi/2,(pi)-c,(pi)-c,(pi)-c,(pi)-c,(pi)-c] #valor maximo que a junta pode assumir
 destino = np.array([[0.5,0.4,0.3]]).T
 
 #vetores colunas do sistema de coordenadas global
@@ -97,14 +99,9 @@ k = np.array([[0,0,1,1]]).T
 o = np.array([[0,0,0,1]]).T #origem
 
 #angulos de juntas iniciais
-q1 = pi*random.uniform(-qlim,qlim)
-q2 = pi*random.uniform(-qlim,qlim)
-q3 = pi*random.uniform(-qlim,qlim)
-q4 = pi*random.uniform(-qlim,qlim)
-q5 = pi*random.uniform(-qlim,qlim)
-q6 = pi*random.uniform(-qlim,qlim)
-q7 = pi*random.uniform(-qlim,qlim)
-q = np.array([[q1,q2,q3,q4,q5,q6,q7]]).T
+q = np.zeros([7,1])
+for a in range(np.size(q)):
+    q[a] = random.uniform(-qlim[a],qlim[a])
 
 #Comprimento dos elos do manipulador
 b1 = 0.2 #20 cm
@@ -237,10 +234,10 @@ while not rospy.is_shutdown():
         #q = q - alfa*((np.linalg.inv(J.T@J))@J.T@f) pseudo inversa a esquerda
 
         for i2 in range(np.size(q)):
-            if(q[i2] > qlim):
-                q[i2] = q[i2] -qlim
-            elif(q[i2] < -qlim):
-                q[i2] = -q[i2] + qlim
+            if(q[i2] > qlim[i2]):
+                q[i2] = q[i2] -qlim[i2]
+            elif(q[i2] < -qlim[i2]):
+                q[i2] = -q[i2] + qlim[i2]
     break    
 print('\n Posicao: ',p_0)
 
