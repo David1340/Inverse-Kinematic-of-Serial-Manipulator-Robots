@@ -1,4 +1,6 @@
 # %%
+#Método Gradiente Descendente/JAcobiano Transposto 
+#  aplicado ao problema de IK incompleto (apenas  a posição)
 from math import cos, sin, sqrt, pi, atan2
 import numpy as np
 import random 
@@ -33,47 +35,10 @@ def distancia(a,b,n):
         d = d + (a[i] - b[i])**2      
     return sqrt(d)
 
-#Calcula os angulos de Euler a partir de uma matriz de Rotacao
-def orientacao(A):
-    #Z-Y-Z Euler Angles
-    if(A[0,2] != 0 or A[1,2] !=0):
-        theta = atan2(sqrt(1 - A[2,2]**2),A[2,2])
-        phi = atan2(A[1,2],A[0,2])
-        psi = atan2(A[2,1],-A[2,0])
-    else:
-        if(A[2,2] == 1):
-            theta = 0
-            phi = 0
-            psi = atan2(A[0,0],A[1,0])
-        else:
-            theta = pi
-            phi = 0
-            psi = - atan2(-A[0,0],-A[0,1]) 
-    result = np.array([theta,phi,psi])
-    return result
-
-def matriz_B(v): #Matriz B(alpha) da equação 4.108 do livro Spong-RobotmodelingandControl
-    L1 = np.array([round(cos(v[2])*sin(v[0]),4),round(-sin(v[2]),4),0])
-    L2 = np.array([round(sin(v[2])*sin(v[0]),4),round(cos(v[2]),4),0])
-    L3 = np.array([round(cos(v[0]),4),0,1])
-    A = np.array([L1,L2,L3])
-    return A
-
-def Ja(J,B):#Usando como entrada a matriz B(alpha) e a Jacobiana analitica eh calculada a matriz geometrica
-    L1 = np.array([1,0,0,0,0,0])
-    L2 = np.array([0,1,0,0,0,0])
-    L3 = np.array([0,0,1,0,0,0])
-    C = np.linalg.inv(B)
-    L4 = np.array([0,0,0,C[0,0],C[0,1],C[0,2]])
-    L5 = np.array([0,0,0,C[1,0],C[1,1],C[1,2]])
-    L6 = np.array([0,0,0,C[2,0],C[2,1],C[2,2]])
-    A = np.array([L1,L2,L3,L4,L5,L6])
-    return A@J
-
 #configurando o Rviz
 pub = rospy.Publisher('joint_states', JointState, queue_size=10)
 rospy.init_node('joint_state_publisher')
-rate = rospy.Rate(100) # 10hz frequência de atualização
+rate = rospy.Rate(100) # 100hz 
 hello_str = JointState()
 hello_str.header = Header()
 hello_str.header.stamp = rospy.Time.now()
@@ -83,18 +48,17 @@ hello_str.position  = [0,0,0,0,0,0,0,0,0]
 hello_str.velocity = []
 hello_str.effort = []
 
-#variaveis
-cont = 0
+#variaveis do método
 qmax = 0.1 #passo maximo entre atualizacoes das juntas
+
 #restrições de cada ângulo
 c = pi/12 
 qlim = [(pi)-c,pi/2,(pi)-c,(pi)-c,(pi)-c,(pi)-c,(pi)-c] #valor maximo que a junta pode assumir
-c = 0.5 #tamanho do passo
+
+#objetivo
 destino = np.array([[0.5,0.4,0.3]]).T
 
 #vetores colunas do sistema de coordenadas global
-i = np.array([[1,0,0,1]]).T
-j = np.array([[0,1,0,1]]).T
 k = np.array([[0,0,1,1]]).T
 o = np.array([[0,0,0,1]]).T #origem
 
@@ -103,7 +67,7 @@ q = np.zeros([7,1])
 for a in range(np.size(q)):
     q[a] = random.uniform(-qlim[a],qlim[a])
 
-#Comprimento dos elos do manipulador
+#Parâmetros físicos do Robô
 b1 = 0.2 #20 cm
 b2 = 0.1
 b3 = 0.2 
@@ -112,7 +76,8 @@ b5 = 0.2
 b6 = 0.1
 b7 = 0.2
 L = 0.2 #comprimento do elo que liga a junta 7 ao efetuador
-### parametros de DH constantes
+
+# parametros de DH constantes
 d1 = b1 + b2
 d2 = 0
 d3 = b3 + b4
@@ -136,7 +101,7 @@ alpha6 = pi/2
 alpha7 = pi/2
 
 while not rospy.is_shutdown():
-    for v in range(500):
+    for v in range(1000):
         
         # parametros de DH variáveis
         theta1 = pi/2 + q[0]
@@ -155,7 +120,6 @@ while not rospy.is_shutdown():
         A5 = matriz_homogenea(d5,a5,alpha5,theta5)
         A6 = matriz_homogenea(d6,a6,alpha6,theta6)
         A7 = matriz_homogenea(d7,a7,alpha7,theta7)
-        A = A1@(A2@(A3@(A4@(A5@(A6@A7)))))
 
         #Definindo os pontos de interesse em seus sistemas locais
         o1_1 = o #origem do SC 1
@@ -166,6 +130,7 @@ while not rospy.is_shutdown():
         o6_6 = o #origem do SC 6
         o7_7 = o #origem do SC 7
         p_7 = np.array([[0,0,L,1]]).T
+
         #Calculando os pontos de interesse no sistema Global
         T1 = A1
         T2 = T1@A2
@@ -181,9 +146,9 @@ while not rospy.is_shutdown():
         o5_0 = T5@o5_5
         o6_0 = T6@o6_6
         o7_0 = T7@o7_7
-        p_0 = A@p_7
+        p_0 = T7@p_7
 
-        #atualiaza os angulos do manipulador no Rviz
+       #atualiaza os angulos do manipulador no Rviz
         hello_str.header.stamp = rospy.Time.now()
         hello_str.position = [q[0,0],q[1,0],q[2,0],q[3,0],q[4,0],q[5,0],q[6,0],0,0]
         pub.publish(hello_str)
@@ -195,7 +160,7 @@ while not rospy.is_shutdown():
         #Condição de parada
         if(erro < 0.001):
             print('Solucao q: \n',q,'\nNumero de iteracoes:',v)
-            break        
+            break  
 
         #os vetores z serao transformados em vetores  no R^3
         z0_0 = k[0:3]
@@ -207,42 +172,48 @@ while not rospy.is_shutdown():
         z6_0 = (T6@k)[0:3]
         #z7_0 = (T7@k)[0:3] nao eh usado
 
-        #cálculo do Jacobiano analitico
-        J = np.zeros([6,7])
+        #cálculo do Jacobiano geométrico
+        J = np.zeros([3,7])
         #produto vetorial de Z0_0 por (o7_0 - o) 
-        J[0:3,0] = matriz_antissimetrica(z0_0)@(o7_0[0:3] - o[0:3])[:,0]
-        J[3:6,0] = z0_0[:,0]
-        J[0:3,1] = matriz_antissimetrica(z1_0)@(o7_0[0:3] - o1_0[0:3])[:,0]
-        J[3:6,1] = z1_0[:,0]
-        J[0:3,2] = matriz_antissimetrica(z2_0)@(o7_0[0:3] - o2_0[0:3])[:,0]
-        J[3:6,2] = z2_0[:,0]
-        J[0:3,3] = matriz_antissimetrica(z3_0)@(o7_0[0:3] - o3_0[0:3])[:,0]
-        J[3:6,3] = z3_0[:,0]
-        J[0:3,4] = matriz_antissimetrica(z4_0)@(o7_0[0:3] - o4_0[0:3])[:,0]
-        J[3:6,4] = z4_0[:,0]
-        J[0:3,5] = matriz_antissimetrica(z5_0)@(o7_0[0:3] - o5_0[0:3])[:,0]
-        J[3:6,5] = z5_0[:,0]
-        J[0:3,6] = matriz_antissimetrica(z6_0)@(o7_0[0:3] - o6_0[0:3])[:,0]
-        J[3:6,6] = z6_0[:,0]
+        J[:,0] = matriz_antissimetrica(z0_0)@(o7_0[0:3] - o[0:3])[:,0]
+        J[:,1] = matriz_antissimetrica(z1_0)@(o7_0[0:3] - o1_0[0:3])[:,0]
+        J[:,2] = matriz_antissimetrica(z2_0)@(o7_0[0:3] - o2_0[0:3])[:,0]
+        J[:,3] = matriz_antissimetrica(z3_0)@(o7_0[0:3] - o3_0[0:3])[:,0]
+        J[:,4] = matriz_antissimetrica(z4_0)@(o7_0[0:3] - o4_0[0:3])[:,0]
+        J[:,5] = matriz_antissimetrica(z5_0)@(o7_0[0:3] - o5_0[0:3])[:,0]
+        J[:,6] = matriz_antissimetrica(z6_0)@(o7_0[0:3] - o6_0[0:3])[:,0]
 
+        #erro
         f = p_0[0:3] - destino
-        J = J[0:3,:] #foi descartado a parte da velocidade angular, porque ela nao esta sendo usada
-        #e caso estivesse sendo, teria que ser convertida em taxa de angulo.
-
+        
+        #cálculo da constante de passo c
         e = np.array([f[0,0],f[1,0],f[2,0]])
         c = e.dot(J@J.T@e)/((J@J.T@e).dot(J@J.T@e))#peguei essa equacao do
         #artigo Inverse Kinematics Techniques in Computer Graphics: A Survey
+
+        #Equação do Jacobiano Transposto
         dq = - c*(J.T@f)
+                
+        #limitando o delta q
         for i2 in range(np.size(dq)):
             if(dq[i2] > qmax):
                 dq[i2] = qmax
             elif(dq[i2] < -qmax):
                 dq[i2] = -qmax 
+
+        #Atualizando a configuração do robô
+        q = q + dq
+
         for i2 in range(np.size(q)):
             if(q[i2] > qlim[i2]):
-                q[i2] = q[i2] -qlim[i2]
+                q[i2] = qlim[i2]
             elif(q[i2] < -qlim[i2]):
-                q[i2] = -q[i2] + qlim[i2]
-        q = q + dq
+                q[i2] = -qlim[i2]
     break    
+print('\n',p_0)
+
+
+
+    
+
 # %%
