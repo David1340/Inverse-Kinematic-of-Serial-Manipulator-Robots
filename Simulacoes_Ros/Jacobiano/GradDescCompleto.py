@@ -246,6 +246,9 @@ while not rospy.is_shutdown():
             elif(dq[i2] < -qmax):
                 dq[i2] = -qmax 
 
+        #Atualizando a cofiguração
+        q = q + dq
+
         #Limitando os valores das juntas
         for i2 in range(np.size(q)):
             if(q[i2] > qlim[i2]):
@@ -253,8 +256,7 @@ while not rospy.is_shutdown():
             elif(q[i2] < -qlim[i2]):
                 q[i2] = -qlim[i2]
         
-        #Atualizando a cofiguração
-        q = q + dq
+
     break   
 print(erro) 
 print(q)
