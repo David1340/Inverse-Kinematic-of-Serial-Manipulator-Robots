@@ -1,4 +1,5 @@
 # %%
+#Método do Damped Last Square aplicado ao problema de IK incompleto (apenas  a posição)
 from math import cos, sin, sqrt, pi, atan2
 import numpy as np
 import random 
