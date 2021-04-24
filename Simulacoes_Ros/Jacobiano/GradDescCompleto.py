@@ -8,19 +8,19 @@ from std_msgs.msg import Header
 
 #Retorna a Matriz de transformacao Homogeneadados  usando como entrada os parametros de DH
 def matriz_homogenea(d,a,alfa,theta):
-    L1 = np.array([round(cos(theta),4), round(-sin(theta)*cos(alfa),4), round(sin(theta)*sin(alfa),4),round(a*cos(theta),4)])
-    L2 = np.array([round(sin(theta),4), round(cos(theta)*cos(alfa),4),round(-cos(theta)*sin(alfa),4),round(a*sin(theta),4)])
-    L3 = np.array([0, round(sin(alfa),4), round(cos(alfa),4), d])
+    L1 = np.array([round(cos(theta),5), round(-sin(theta)*cos(alfa),5), round(sin(theta)*sin(alfa),5),round(a*cos(theta),5)])
+    L2 = np.array([round(sin(theta),5), round(cos(theta)*cos(alfa),5),round(-cos(theta)*sin(alfa),5),round(a*sin(theta),5)])
+    L3 = np.array([0, round(sin(alfa),5), round(cos(alfa),5), d])
     L4 = np.array([0,0,0,1])
     A = np.array([L1,L2,L3,L4])
     return A
 
-def matriz_antissimetrica(a):
+def S(a):#matriz_antissimetrica
     #A = [0,-az,ay ; az,0,-ax ; -ay,ax,0]
     A = np.zeros((3,3))
-    A[0,1] = -a[2,0]
-    A[0,2] = a[1,0]
-    A[1,2] = -a[0,0]
+    A[0,1] = -a[2]
+    A[0,2] = a[1]
+    A[1,2] = -a[0]
     A[1,0] = - A[0,1]
     A[2,0] = - A[0,2]
     A[2,1] = - A[1,2]
@@ -33,48 +33,21 @@ def distancia(a,b,n):
         d = d + (a[i] - b[i])**2      
     return sqrt(d)
 
-#Calcula os angulos de Euler a partir de uma matriz de Rotacao
+#Calcula os angulos de RPY a partir de uma matriz de Rotacao
 def orientacao(A):
-    #Z-Y-Z Euler Angles
-    if(A[2,2] < -1): A[2,2] = -1
-    if(A[0,2] != 0 or A[1,2] !=0):
-        theta = atan2(sqrt(1 - (A[2,2]**2)),A[2,2])
-        phi = atan2(A[1,2],A[0,2])
-        psi = atan2(A[2,1],-A[2,0])
-    else:
-        if(A[2,2] == 1):
-            theta = 0
-            phi = 0
-            psi = atan2(A[0,0],A[1,0])
-        else:
-            theta = pi
-            phi = 0
-            psi = - atan2(-A[0,0],-A[0,1]) 
-    result = np.array([[theta,phi,psi]]).T
+    #calcular os ângulos de orientação na conversão Z -> Y -> X
+    R = atan2(A[1,0],A[0,0]) #Roll
+    P = atan2(-A[2,0],sqrt((A[2,1]**2)+(A[2,2]**2))) #Pitch
+    Y = atan2(A[2,1],A[2,2]) #Yaw
+    result = np.array([[R,P,Y]]).T
     return result
 
-def matriz_B(v): #Matriz B(alpha) da equação 4.108 do livro Spong-RobotmodelingandControl
-    L1 = np.array([round(cos(v[2])*sin(v[0]),4),round(-sin(v[2]),4),0])
-    L2 = np.array([round(sin(v[2])*sin(v[0]),4),round(cos(v[2]),4),0])
-    L3 = np.array([round(cos(v[0]),4),0,1])
-    A = np.array([L1,L2,L3])
-    return A
 
-def Ja(J,B):#Usando como entrada a matriz B(alpha) e a Jacobiana analitica eh calculada a matriz geometrica
-    L1 = np.array([1,0,0,0,0,0])
-    L2 = np.array([0,1,0,0,0,0])
-    L3 = np.array([0,0,1,0,0,0])
-    C = np.linalg.inv(B.T@B + 0.01*np.eye(3))@B.T
-    L4 = np.array([0,0,0,C[0,0],C[0,1],C[0,2]])
-    L5 = np.array([0,0,0,C[1,0],C[1,1],C[1,2]])
-    L6 = np.array([0,0,0,C[2,0],C[2,1],C[2,2]])
-    A = np.array([L1,L2,L3,L4,L5,L6])
-    return A@J
 
 #configurando o Rviz
 pub = rospy.Publisher('joint_states', JointState, queue_size=10)
 rospy.init_node('joint_state_publisher')
-rate = rospy.Rate(100) # 10hz frequência de atualização
+rate = rospy.Rate(100) # 100hz frequência de atualização
 hello_str = JointState()
 hello_str.header = Header()
 hello_str.header.stamp = rospy.Time.now()
@@ -86,13 +59,14 @@ hello_str.effort = []
 
 #variaveis
 cont = 0
-qmax = 0.005 #passo maximo entre atualizacoes das juntas
+qmax = 0.1#passo maximo entre atualizacoes das juntas
 #restrições de cada ângulo
 c = pi/12 
 qlim = [(pi)-c,pi/2,(pi)-c,(pi)-c,(pi)-c,(pi)-c,(pi)-c] #valor maximo que a junta pode assumir
 c = 0.5 #tamanho do passo
-destino = np.array([[0.5,0.4,0.6,pi,0,0]]).T
-
+pos_d = np.array([[0.3,0.3,0.6]]).T
+orient_d = np.array([[0,-1,0],[1,0,0],[0,0,0]])
+#orient_d = np.eye(3)
 #vetores colunas do sistema de coordenadas global
 i = np.array([[1,0,0,1]]).T
 j = np.array([[0,1,0,1]]).T
@@ -102,8 +76,7 @@ o = np.array([[0,0,0,1]]).T #origem
 #angulos de juntas iniciais
 q = np.zeros([7,1])
 for a in range(np.size(q)):
-    q[a] = random.uniform(-qlim[a],qlim[a])
-
+   q[a] = random.uniform(-qlim[a],qlim[a])
 #Comprimento dos elos do manipulador
 b1 = 0.2 #20 cm
 b2 = 0.1
@@ -137,8 +110,7 @@ alpha6 = pi/2
 alpha7 = pi/2
 
 while not rospy.is_shutdown():
-    for v in range(500):
-        
+    for v in range(1000):
         # parametros de DH variáveis
         theta1 = pi/2 + q[0]
         theta2 = q[1]
@@ -191,17 +163,16 @@ while not rospy.is_shutdown():
         rate.sleep()        
         
         #Calcula do erro da pose atual em relação a pose desejada
-        orient = orientacao(T7)
-        erro1 = distancia(p_0,destino[0:3],3)
-        erro2 = distancia(orient,destino[3:6],3)
-        k1 = 0.2 #orientação
-        k2 = 0.8 #posição
-        erro = k1*erro1 + k2*erro2
+        #orient = orientacao2(T7)
+        #erro1 = distancia(p_0,destino[0:3],3)
+        #erro2 = distancia(orient,destino[3:6],3)
+        #k1 = 1# 0.8 #posição
+        #k2 = 0.2 #orientação       
+        erro =  distancia(p_0,pos_d,3) #k1*erro1 #+ k2*erro2
         #Condição de parada
         if(erro < 0.001):
             print('Solucao q: \n',q,'\nNumero de iteracoes:',v)
             break        
-
         #os vetores z serao transformados em vetores  no R^3
         z0_0 = k[0:3]
         z1_0 = (T1@k)[0:3]
@@ -212,35 +183,32 @@ while not rospy.is_shutdown():
         z6_0 = (T6@k)[0:3]
         #z7_0 = (T7@k)[0:3] nao eh usado
 
-        #cálculo do Jacobiano analitico
+        #cálculo do Jacobiano geometrico
         J = np.zeros([6,7])
         #produto vetorial de Z0_0 por (o7_0 - o) 
-        J[0:3,0] = matriz_antissimetrica(z0_0)@(o7_0[0:3] - o[0:3])[:,0]
+        J[0:3,0] = S(z0_0)@(o7_0[0:3] - o[0:3])[:,0]
         J[3:6,0] = z0_0[:,0]
-        J[0:3,1] = matriz_antissimetrica(z1_0)@(o7_0[0:3] - o1_0[0:3])[:,0]
+        J[0:3,1] = S(z1_0)@(o7_0[0:3] - o1_0[0:3])[:,0]
         J[3:6,1] = z1_0[:,0]
-        J[0:3,2] = matriz_antissimetrica(z2_0)@(o7_0[0:3] - o2_0[0:3])[:,0]
+        J[0:3,2] = S(z2_0)@(o7_0[0:3] - o2_0[0:3])[:,0]
         J[3:6,2] = z2_0[:,0]
-        J[0:3,3] = matriz_antissimetrica(z3_0)@(o7_0[0:3] - o3_0[0:3])[:,0]
+        J[0:3,3] = S(z3_0)@(o7_0[0:3] - o3_0[0:3])[:,0]
         J[3:6,3] = z3_0[:,0]
-        J[0:3,4] = matriz_antissimetrica(z4_0)@(o7_0[0:3] - o4_0[0:3])[:,0]
+        J[0:3,4] = S(z4_0)@(o7_0[0:3] - o4_0[0:3])[:,0]
         J[3:6,4] = z4_0[:,0]
-        J[0:3,5] = matriz_antissimetrica(z5_0)@(o7_0[0:3] - o5_0[0:3])[:,0]
+        J[0:3,5] = S(z5_0)@(o7_0[0:3] - o5_0[0:3])[:,0]
         J[3:6,5] = z5_0[:,0]
-        J[0:3,6] = matriz_antissimetrica(z6_0)@(o7_0[0:3] - o6_0[0:3])[:,0]
+        J[0:3,6] = S(z6_0)@(o7_0[0:3] - o6_0[0:3])[:,0]
         J[3:6,6] = z6_0[:,0]
        
-        pose = np.zeros([6,1])
-        pose[0:3] = p_0[0:3]
-        pose[3:6] = orientacao(T7)
-        f = pose - destino
-        J = Ja(J,matriz_B(pose[3:6]))
-        #J = J[0:3,:] #foi descartado a parte da velocidade angular, porque ela nao esta sendo usada
-        #e caso estivesse sendo, teria que ser convertida em taxa de angulo.
-
+        f = np.zeros([6,1])
+        f[0:3] = -(pos_d - p_0[0:3])
+        #a parte angular peguei do artigo A closed-loop inverse kinematic scheme
+        #online joint based robot control
+        f[3:6] = -0.5*(S(orient_d[:,0])@T7[0:3,0:1] + S(orient_d[:,1])@T7[0:3,1:2]  + \
+                    S(orient_d[:,2])@T7[0:3,2:3])
         e = np.array([f[0,0],f[1,0],f[2,0],f[3,0],f[4,0],f[5,0]])
-        #c = e.dot(J@J.T@e)/((J@J.T@e).dot(J@J.T@e))#peguei essa equacao do
-        c = 0.01
+        c = e.dot(J@J.T@e)/((J@J.T@e).dot(J@J.T@e))#peguei essa equacao do
         #artigo Inverse Kinematics Techniques in Computer Graphics: A Survey
         dq = - c*(J.T@f)
         for i2 in range(np.size(dq)):
@@ -250,9 +218,11 @@ while not rospy.is_shutdown():
                 dq[i2] = -qmax 
         for i2 in range(np.size(q)):
             if(q[i2] > qlim[i2]):
-                q[i2] = qlim[i2]# q[i2] -qlim[i2]
+                q[i2] = qlim[i2]
             elif(q[i2] < -qlim[i2]):
-                q[i2] = -qlim[i2] #-q[i2] + qlim[i2]
+                q[i2] = -qlim[i2]
         q = q + dq
-    break    
+    break   
+print(erro) 
+print(q)
 # %%
