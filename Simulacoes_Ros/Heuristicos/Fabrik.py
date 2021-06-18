@@ -1,4 +1,4 @@
-from math import cos, sin, sqrt, pi, atan2
+from math import cos, sin, sqrt, pi, atan2 ,acos
 import numpy as np
 import random 
 
@@ -122,15 +122,16 @@ while(erro > erromin and k < K):
                 pl[:,i] = iteracao_Fabrik(p[:,i],pl[:,i+1],b[i],Dl[:,i])[:,0] #junta 6
         elif(i == 1 or i == 3 or i == 5): #Se for junta Hinge
             if(i == 1 or i == 3):#Se a junta prev for pivot
-                #calculo da posicao da junta pi usando o Fabrik padrao
-                v = vetor(pl[:,i+1] - pl[:,i+2]) #pl(i+2) -> pl(i+1) 
-                v = v/norm(v)
-                pl[:,i] = pl[:,i+1] + v*b(i)
+                pl[:,i] = pl[:,i+1] - Dl[i+1]*b[i]
             else: #Se for a junta prev for hinge
                 pl[:,i] = iteracao_Fabrik(p[:,i-1],pl[:,i+1],b[i],Dl[:,i+1])[:,0]
-            #Preciso investigar essa parte, ainda não compreendi bem
+            #Preciso investigar essa parte, ainda não compreendi bem, e está estranho
             paux = iteracao_Fabrik(p[:,i-1],pl[:,i+1],b[i],Dl[:,i+1])
             v1 = vetor(paux - pl[:,i+1])
+            v1 = v1/norm(v1)
+            v2 = rotationar_vetor(Dl[:,i+1],v1,dif_angular(i))
+            th = acos(v1.T@v2)
+            Dl[:,i] = rotationar_vetor()
         elif(i == 0 or i == 2 or i == 4):
             break
     break
