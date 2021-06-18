@@ -10,7 +10,7 @@ def vetor(v):
 def distancia(a,b,n):
     d = 0
     for i in range(n):
-        d = d + (a[i] - b[i])**2      
+        d = d + (a[i] - b[i])**2     
     return sqrt(d)
 
 def norm(v):
@@ -20,7 +20,7 @@ def projecao_ponto_plano(normal,p0,p):
     #normal -> vetor normal ao plano
     #p0 -> ponto pertecente ao plano
     #p -> ponto a ser projetado
-    #constante d da equação do plano
+    #constante d da equação do 
     d = -normal.T@p0 #produto escala 
     #distancia do ponto ao plano
     alpha = (-d - normal.T@p)/(normal[0,0]**2 +  normal[1,0]**2 + normal[2,0]**2)
@@ -31,8 +31,12 @@ def iteracao_Fabrik(p,p0,d,normal):
     #normal -> vetor normal ao plano
     #p0 -> ponto pertecente ao plano
     #p -> ponto a ser projetado
+    normal = vetor(normal)
+    p0 = vetor(p0)
+    p = vetor(p)
     proj = projecao_ponto_plano(normal,p0,p)
     r = distancia(p0,proj,3)
+    r = distancia(p0[:,0],proj[:,0],3)
     delta = d/r
     pnew = (1- delta)*p0 + delta*proj
     return pnew
@@ -79,7 +83,7 @@ y  = vetor([0,1,0])
 z  = vetor([0,0,1])
 destino = vetor([20,20,20])
 dif_angular = np.array([[0,0,0,0,0,pi/2,0]]) #diferenca angular em relacao a junta anterior
-b = 5*[2,1,2,1,2,1,2] #comprimento dos elos 
+b = 5*np.array([2,1,2,1,2,1,2]) #comprimento dos elos 
 D = np.zeros([3,n])
 for cont in range(n):
     if(direcoes[cont] == 1): #Se z
@@ -110,14 +114,23 @@ while(erro > erromin and k < K):
                 v1 = vetor(pl[:,i+1] - p[:,i])#p6 -> p7' (efetuador)
                 v1 = v1/norm(v1)
                 v2 = vetor(p[:,i-1] - p[:,i])#p6 -> p5
-                Dl_cte = (S(v1)@v2)[:,0] #produto vetorial
+                Dl_cte = S(v1)@v2 #produto vetorial
                 Dl[:,i] = Dl_cte[:,0]
-                pl[:,i] = iteracao_Fabrik(p[:,i],pl[:,i+1],b,[i],Dl[:,i]) #junta 6
+                pl[:,i] = iteracao_Fabrik(p[:,i],pl[:,i+1],b[i],Dl[:,i])[:,0] #junta 6
             else:
                 Dl[:,i] = Dl_cte[:,0]
-                pl[:,i] = iteracao_Fabrik(p[:,i],pl[:,i+1],b,[i],Dl[:,i]) #junta 6
-        elif(i == 1 or i == 3 or i == 5):
-            break
+                pl[:,i] = iteracao_Fabrik(p[:,i],pl[:,i+1],b[i],Dl[:,i])[:,0] #junta 6
+        elif(i == 1 or i == 3 or i == 5): #Se for junta Hinge
+            if(i == 1 or i == 3):#Se a junta prev for pivot
+                #calculo da posicao da junta pi usando o Fabrik padrao
+                v = vetor(pl[:,i+1] - pl[:,i+2]) #pl(i+2) -> pl(i+1) 
+                v = v/norm(v)
+                pl[:,i] = pl[:,i+1] + v*b(i)
+            else: #Se for a junta prev for hinge
+                pl[:,i] = iteracao_Fabrik(p[:,i-1],pl[:,i+1],b[i],Dl[:,i+1])[:,0]
+            #Preciso investigar essa parte, ainda não compreendi bem
+            paux = iteracao_Fabrik(p[:,i-1],pl[:,i+1],b[i],Dl[:,i+1])
+            v1 = vetor(paux - pl[:,i+1])
         elif(i == 0 or i == 2 or i == 4):
             break
     break
@@ -128,7 +141,7 @@ n = np.array([[0,0,1]]).T
 p = np.array([[5,4,3]]).T
 p0 = np.array([[1,1,6]]).T
 
-x = iteracao_Fabrik(p,p0,1,n)
-print(erro)
+#x = iteracao_Fabrik(p,p0,1,n)
+print('erro: ',erro)
 
 
