@@ -2,12 +2,19 @@ from math import cos, sin, sqrt, pi, atan2
 import numpy as np
 import random 
 
+
+def vetor(v):
+    #criar um vetor linha a partir de uma lista
+    return np.array([[v[0],v[1],v[2]]]).T
 #Calcula a distancia Euclidiana entre dois pontos no R^n
 def distancia(a,b,n):
     d = 0
     for i in range(n):
         d = d + (a[i] - b[i])**2      
     return sqrt(d)
+
+def norm(v):
+    return sqrt(v[[0]]**2 + v[[1]]**2 + v[[2]]**2)
 
 def projecao_ponto_plano(normal,p0,p):
     #normal -> vetor normal ao plano
@@ -65,11 +72,63 @@ def S(a):
     A[2,1] = - A[1,2]
     return A
 
+n = 7 #numero de juntas
+direcoes = [1,2,1,2,1,2,3] #1 - z, 2 - x, 3 -y  direcao iniciail do vetor de atuacao da junta
+x  = vetor([1,0,0])
+y  = vetor([0,1,0])
+z  = vetor([0,0,1])
+destino = vetor([20,20,20])
+dif_angular = np.array([[0,0,0,0,0,pi/2,0]]) #diferenca angular em relacao a junta anterior
+b = 5*[2,1,2,1,2,1,2] #comprimento dos elos 
+D = np.zeros([3,n])
+for cont in range(n):
+    if(direcoes[cont] == 1): #Se z
+        D[:,cont] = z[:,0]
+    elif(direcoes[cont] == 2):#Se x
+        D[:,cont] = x[:,0]
+    elif(direcoes[cont] == 3):#Se y
+        D[:,cont] = y[:,0] 
+
+px = np.zeros([1,8])
+py = np.zeros([1,8])
+pz = 5*np.array([[0,2,3,5,6,8,9,11]])
+p = np.zeros([3,n+1]) #posicao inicial das juntas
+p[0,:] = px
+p[1,:] = py
+p[2,:] = pz
+pl = p
+Dl = D
+erro = distancia(p[:,n],destino,3)
+K = 100
+k = 0
+erromin = 10**-3
+while(erro > erromin and k < K):
+    for i in range(n-1,-1,-1):
+        if(i == 6):
+            if(k == 0):
+                pl[:,i+1] = destino[:,0]#coloca o efetuador no destino 
+                v1 = vetor(pl[:,i+1] - p[:,i])#p6 -> p7' (efetuador)
+                v1 = v1/norm(v1)
+                v2 = vetor(p[:,i-1] - p[:,i])#p6 -> p5
+                Dl_cte = (S(v1)@v2)[:,0] #produto vetorial
+                Dl[:,i] = Dl_cte[:,0]
+                pl[:,i] = iteracao_Fabrik(p[:,i],pl[:,i+1],b,[i],Dl[:,i]) #junta 6
+            else:
+                Dl[:,i] = Dl_cte[:,0]
+                pl[:,i] = iteracao_Fabrik(p[:,i],pl[:,i+1],b,[i],Dl[:,i]) #junta 6
+        elif(i == 1 or i == 3 or i == 5):
+            break
+        elif(i == 0 or i == 2 or i == 4):
+            break
+    break
+
+
+
 n = np.array([[0,0,1]]).T
 p = np.array([[5,4,3]]).T
 p0 = np.array([[1,1,6]]).T
 
 x = iteracao_Fabrik(p,p0,1,n)
-print(x)
+print(erro)
 
 
