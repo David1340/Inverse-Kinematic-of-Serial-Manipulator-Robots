@@ -1,5 +1,5 @@
 # %%
-from math import cos, sin, sqrt, pi, atan2 ,acos
+from math import cos, sin, sqrt, pi,acos
 import numpy as np
 import random 
 
@@ -78,12 +78,16 @@ def S(a):
     A[2,1] = - A[1,2]
     return A
 
+def acosr(x):
+    return acos(np.round(x,5))
+
 n = 7 #numero de juntas
 direcoes = [1,2,1,2,1,2,3] #1 - z, 2 - x, 3 -y  direcao iniciail do vetor de atuacao da junta
 x  = vetor([1,0,0])
 y  = vetor([0,1,0])
 z  = vetor([0,0,1])
-destino = 20*vetor([1,0.7,1])
+#destino = 20*vetor([1,0.7,1])
+destino = vetor([0.4,0.4,0.4])
 dif_angular = [0,0,0,0,0,pi/2,0] #diferenca angular em relacao a junta anterior
 b = 5*np.array([2,1,2,1,2,1,2]) #comprimento dos elos 
 D = np.zeros([3,n])
@@ -97,7 +101,8 @@ for cont in range(n):
 
 px = np.zeros([1,8])
 py = np.zeros([1,8])
-pz = 5*np.array([[0,2,3,5,6,8,9,11]])
+#pz = 5*np.array([[0,2,3,5,6,8,9,11]])
+pz = np.array([[0.2,0.1,0.2,0.1,0.2,0.1,0.2,0.2]])
 p = np.zeros([3,n+1]) #posicao inicial das juntas
 p[0,:] = px
 p[1,:] = py
@@ -105,7 +110,7 @@ p[2,:] = pz
 pl = p
 Dl = D
 erro = distancia(p[:,n],destino,3)
-K = 25
+K = 100
 k = 0
 erromin = 10**-3
 
@@ -190,3 +195,44 @@ print('k: ',k)
 print(p,'\n\n\n')
 print(D,'\n')
 
+#Conversão da solução gráfica em um vetor de ângulo
+x  = vetor([1,0,0])
+y  = vetor([0,1,0])
+z  = vetor([0,0,1])
+q = np.zeros([7,1])
+#v é o vetor ortogonal ao vetor de refência para o cálculo dos ângulps 
+v = rotationar_vetor(x,vetor(D[:,0]),pi/2)
+q[0] = acosr(D[:,1].T@x)
+if(D[:,1].T@v < 0): q[0] = -q[0]
+
+v = rotationar_vetor(z,vetor(D[:,1]),pi/2)
+q[1] = acosr(D[:,2].T@z)
+if(D[:,2].T@v < 0): q[1] = -q[1]
+
+v = rotationar_vetor(vetor(D[:,1]),vetor(D[:,2]),pi/2)
+q[2] = acosr(D[:,3].T@D[:,1])
+if(D[:,3].T@v < 0): q[2] = -q[2]
+
+v = rotationar_vetor(vetor(D[:,2]),vetor(D[:,3]),pi/2)
+q[3] = acosr(D[:,4].T@D[:,2])
+if(D[:,4].T@v < 0): q[3] = -q[3]
+
+v = rotationar_vetor(vetor(D[:,3]),vetor(D[:,4]),pi/2)
+q[4] = acosr(D[:,5].T@D[:,3])
+if(D[:,5].T@v < 0): q[4] = -q[4]
+
+v_aux = vetor(p[:,6] - p[:,5])
+v_aux = v_aux/norm(v_aux)
+v = rotationar_vetor(vetor(D[:,4]),vetor(D[:,5]),pi/2)
+q[5] = acosr(v_aux.T@D[:,4])
+if(v_aux.T@v < 0): q[5] = -q[5]
+
+v_aux = vetor(p[:,7] - p[:,6])
+v_aux = v_aux/norm(v_aux)
+v_aux2 = vetor(p[:,6] - p[:,5]) 
+v_aux2 = v_aux2/norm(v_aux2)
+v = rotationar_vetor(v_aux2,vetor(D[:,5]),pi/2)
+q[6] = acosr(v_aux.T@v_aux2)
+if(v_aux.T@v < 0): q[6] = -q[6]
+
+print(q*(180/pi))
