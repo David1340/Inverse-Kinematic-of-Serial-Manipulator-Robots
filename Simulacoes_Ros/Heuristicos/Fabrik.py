@@ -101,7 +101,11 @@ direcoes = [1,2,1,2,1,2,3] #1 - z, 2 - x, 3 -y  direcao iniciail do vetor de atu
 x  = vetor([1,0,0])
 y  = vetor([0,1,0])
 z  = vetor([0,0,1])
-destino = -vetor([0.4,0.4,0.4])
+#destino = -vetor([0.4,0.4,0.4])
+destino = vetor([0.5*random.random(),0.5*random.random(),0.5*random.random()])
+#destino = np.round(vetor([0.00430015,0.30523663,0.04726399]),5)
+#destino = vetor([0.00430015,0.30523663,0.04726399])
+print('destino:',destino[:,0])
 dif_angular = [0,0,0,0,0,pi/2,0] #diferenca angular em relacao a junta anterior
 b = np.array([0.1,0.2,0.1,0.2,0.1,0.2,0.2])
 D = np.zeros([3,n])
@@ -190,7 +194,7 @@ while(erro > erromin and k < K):
                 paux = iteracao_Fabrik(p[:,i+1],pl[:,i],b[i],Dl[:,i-1])[:,0]
                 v1 = vetor(paux - pl[:,i])
                 v1 = v1/norm(v1)
-                Dl[:,i] = rotationar_vetor(vetor(Dl[:,i-1]),v1,-pi/2)[:,0]
+                Dl[:,i] = rotationar_vetor(vetor(Dl[:,i-1]),v1,pi/2)[:,0]
                 Dl[:,i] = Dl[:,i]/norm(D[:,i])
         elif(i == 2 or i == 4):
             pl[:,i] = iteracao_Fabrik(p[:,i+1],pl[:,i-1],b[i-1],Dl[:,i-1])[:,0]
@@ -207,14 +211,14 @@ while(erro > erromin and k < K):
 
 print('erro: ', erro)
 print('k: ',k)  
-print('p',p[:,7])
+print('p',p)
 
 #Conversão da solução gráfica em um vetor de ângulo
 x  = vetor([1,0,0])
 y  = vetor([0,1,0])
 z  = vetor([0,0,1])
 q = np.zeros([7,1])
-#v é o vetor ortogonal ao vetor de refência para o cálculo dos ângulps 
+#v é o vetor ortogonal ao vetor de refência para o cálculo dos ângulos 
 v = rotationar_vetor(x,vetor(D[:,0]),pi/2)
 q[0] = acosr(D[:,1].T@x)
 if(D[:,1].T@v < 0): q[0] = -q[0]
@@ -245,10 +249,10 @@ v_aux = vetor(p[:,7] - p[:,6])
 v_aux = v_aux/norm(v_aux)
 v_aux2 = vetor(p[:,6] - p[:,5]) 
 v_aux2 = v_aux2/norm(v_aux2)
-v = rotationar_vetor(v_aux2,vetor(D[:,5]),pi/2)
+v = rotationar_vetor(v_aux2,vetor(D[:,6]),pi/2)
 q[6] = acosr(v_aux.T@v_aux2)
 if(v_aux.T@v < 0): q[6] = -q[6]
-
+print('q: ', q)
 while not rospy.is_shutdown():
         #atualiaza os angulos do manipulador no Rviz
         hello_str.header.stamp = rospy.Time.now()
