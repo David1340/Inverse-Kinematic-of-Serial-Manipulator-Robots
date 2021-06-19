@@ -1,3 +1,4 @@
+# %%
 from math import cos, sin, sqrt, pi, atan2 ,acos
 import numpy as np
 import random 
@@ -36,32 +37,33 @@ def iteracao_Fabrik(p,p0,d,normal):
     p = vetor(p)
     proj = projecao_ponto_plano(normal,p0,p)
     r = distancia(p0,proj,3)
-    r = distancia(p0[:,0],proj[:,0],3)
+    #r = distancia(p0[:,0],proj[:,0],3)
     delta = d/r
     pnew = (1- delta)*p0 + delta*proj
     return pnew
 
 def multiplicacao_quaternios(q,q2):
-    resultado = np.array([[0,0,0,0]])
+    resultado = np.zeros([4,1])
     resultado[0,0] = q[0,0]*q2[0,0] -q[1,0]*q2[1,0] -q[2,0]*q2[2,0] -q[3,0]*q2[3,0] 
-    resultado[1,0] = q[0,0]*q2[1,0] -q[1,0]*q2[0,0] -q[2,0]*q2[3,0] -q[3,0]*q2[2,0] 
-    resultado[2,0] = q[0,0]*q2[2,0] -q[1,0]*q2[3,0] -q[2,0]*q2[0,0] -q[3,0]*q2[1,0] 
-    resultado[3,0] = q[0,0]*q2[3,0] -q[1,0]*q2[2,0] -q[2,0]*q2[1,0] -q[3,0]*q2[0,0] 
+    resultado[1,0] = q[0,0]*q2[1,0] +q[1,0]*q2[0,0] +q[2,0]*q2[3,0] -q[3,0]*q2[2,0] 
+    resultado[2,0] = q[0,0]*q2[2,0] -q[1,0]*q2[3,0] +q[2,0]*q2[0,0] +q[3,0]*q2[1,0] 
+    resultado[3,0] = q[0,0]*q2[3,0] +q[1,0]*q2[2,0] -q[2,0]*q2[1,0] +q[3,0]*q2[0,0] 
+    #print(resultado)
     return resultado
 
 def rotationar_vetor(p,v,th):
     #gira p em torno de v em th rad
     a = cos(th/2)
-    b = v[[0,0]]*sin(th/2)
-    c = v[[1,0]]*sin(th/2)
-    d = v[[2,0]]*sin(th/2)
+    b = v[0,0]*sin(th/2)
+    c = v[1,0]*sin(th/2)
+    d = v[2,0]*sin(th/2)
     p_aumentado = np.zeros([4,1])
-    p_aumentado[0:3,0] = p[:,0]
-    h = np.array[[a,b,c,d]]
-    hx = np.array[[a,-b,-c,-d]]
-    p_r = multiplicacao_quaternios(h,p)
+    p_aumentado[1:4,0] = p[:,0]
+    h = np.array([[a,b,c,d]]).T
+    hx = np.array([[a,-b,-c,-d]]).T
+    p_r = multiplicacao_quaternios(h,p_aumentado)
     q_r = multiplicacao_quaternios(p_r,hx)
-    return q_r[0:3]
+    return q_r[1:4]
 
 #matriz_antissimetrica
 def S(a):
@@ -81,8 +83,8 @@ direcoes = [1,2,1,2,1,2,3] #1 - z, 2 - x, 3 -y  direcao iniciail do vetor de atu
 x  = vetor([1,0,0])
 y  = vetor([0,1,0])
 z  = vetor([0,0,1])
-destino = vetor([20,20,20])
-dif_angular = np.array([[0,0,0,0,0,pi/2,0]]) #diferenca angular em relacao a junta anterior
+destino = 20*vetor([1,0.7,1])
+dif_angular = [0,0,0,0,0,pi/2,0] #diferenca angular em relacao a junta anterior
 b = 5*np.array([2,1,2,1,2,1,2]) #comprimento dos elos 
 D = np.zeros([3,n])
 for cont in range(n):
@@ -103,46 +105,88 @@ p[2,:] = pz
 pl = p
 Dl = D
 erro = distancia(p[:,n],destino,3)
-K = 100
+K = 25
 k = 0
 erromin = 10**-3
+
 while(erro > erromin and k < K):
-    for i in range(n-1,-1,-1):
+    #Forward
+    for i in range(n-1,0,-1):
         if(i == 6):
-            if(k == 0):
-                pl[:,i+1] = destino[:,0]#coloca o efetuador no destino 
-                v1 = vetor(pl[:,i+1] - p[:,i])#p6 -> p7' (efetuador)
-                v1 = v1/norm(v1)
-                v2 = vetor(p[:,i-1] - p[:,i])#p6 -> p5
-                Dl_cte = S(v1)@v2 #produto vetorial
-                Dl[:,i] = Dl_cte[:,0]
-                pl[:,i] = iteracao_Fabrik(p[:,i],pl[:,i+1],b[i],Dl[:,i])[:,0] #junta 6
+            pl[:,i+1] = destino[:,0]#coloca o efetuador no destino          
+            v1 = vetor(pl[:,i+1] - p[:,i])#p6 -> p7' (efetuador)
+            v1 = v1/norm(v1)
+            v2 = vetor(p[:,i-1] - p[:,i])#p6 -> p5
+            v2 = v2/norm(v2)
+            naux = (S(v1)@v2)#produto vetorial
+            if(norm(naux) > 0.1):
+                Dl[:,i] = naux[:,0]/norm(naux)
             else:
-                Dl[:,i] = Dl_cte[:,0]
-                pl[:,i] = iteracao_Fabrik(p[:,i],pl[:,i+1],b[i],Dl[:,i])[:,0] #junta 6
+                Dl[:,i] = D[:,i]
+            pl[:,i] = iteracao_Fabrik(p[:,i],pl[:,i+1],b[i],Dl[:,i])[:,0] #junta 6
         elif(i == 1 or i == 3 or i == 5): #Se for junta Hinge
             if(i == 1 or i == 3):#Se a junta prev for pivot
-                pl[:,i] = pl[:,i+1] - Dl[i+1]*b[i]
+                pl[:,i] = pl[:,i+1] - Dl[:,i+1]*b[i]
+                paux = iteracao_Fabrik(p[:,i-1],pl[:,i],b[i],Dl[:,i+1])[:,0]
+                v1 = vetor(paux - pl[:,i])
+                v1 = v1/norm(v1)
+                v2 = vetor(Dl[:,i+2])
+                th = np.real(acos(v1.T@v2))
+                Dl[:,i] = rotationar_vetor(v2,vetor(Dl[:,i+1]),(pi/2) - th)[:,0] 
+                Dl[:,i] = Dl[:,i]/norm(D[:,i])
             else: #Se for a junta prev for hinge
                 pl[:,i] = iteracao_Fabrik(p[:,i-1],pl[:,i+1],b[i],Dl[:,i+1])[:,0]
-            #Preciso investigar essa parte, ainda não compreendi bem, e está estranho
-            paux = iteracao_Fabrik(p[:,i-1],pl[:,i+1],b[i],Dl[:,i+1])
-            v1 = vetor(paux - pl[:,i+1])
+                v1 = vetor(pl[:,i] - pl[:,i+1])
+                v1 = v1/norm(v1) #esta certo
+                Dl[:,i] = rotationar_vetor(vetor(Dl[:,i+1]),v1,pi/2)[:,0] #esta errado
+                Dl[:,i] = Dl[:,i]/norm(D[:,i])
+                
+        elif(i == 2 or i == 4):
+            pl[:,i] = iteracao_Fabrik(p[:,i-1],pl[:,i+1],b[i],Dl[:,i+1])[:,0]
+            v1 = pl[:,i] - pl[:,i+1]
             v1 = v1/norm(v1)
-            v2 = rotationar_vetor(Dl[:,i+1],v1,dif_angular(i))
-            th = acos(v1.T@v2)
-            Dl[:,i] = rotationar_vetor()
-        elif(i == 0 or i == 2 or i == 4):
-            break
-    break
+            Dl[:,i] = -v1
+    #if(k == 1): break
+    Dl[:,0] = [0,0,1]
+    pl[:,0] = pl[:,1] - b[0]*Dl[:,0] 
+    D = Dl
+    p = pl
+    #até aqui está certo
+    #Backward
+    for i in range(0,n):
+        if(i == 1 or i == 3 or i == 5 or i == 6): #Se for junta Hinge
+            if(i == 1 or i == 3 or i == 5):#Se a junta prev for pivot
+                pl[:,i] = pl[:,i-1] + Dl[:,i-1]*b[i-1]
+                paux = iteracao_Fabrik(p[:,i+1],pl[:,i],b[i],Dl[:,i-1])[:,0]
+                v1 = vetor(paux - pl[:,i])
+                v1 = v1/norm(v1)
+                if(i != 1): v2 = vetor(Dl[:,i-2])
+                else: v2 = np.array([[1,0,0]]).T
+                th = np.real(acos(v1.T@v2))
+                Dl[:,i] = rotationar_vetor(v2,vetor(Dl[:,i-1]),(pi/2) - th)[:,0] 
+                Dl[:,i] = Dl[:,i]/norm(D[:,i])
+            else: #Se i = 6
+                pl[:,i] = iteracao_Fabrik(p[:,i+1],pl[:,i-1],b[i-1],Dl[:,i-1])[:,0]
+                paux = iteracao_Fabrik(p[:,i+1],pl[:,i],b[i],Dl[:,i-1])[:,0]
+                v1 = vetor(paux - pl[:,i])
+                v1 = v1/norm(v1)
+                Dl[:,i] = rotationar_vetor(vetor(Dl[:,i-1]),v1,-pi/2)[:,0]
+                Dl[:,i] = Dl[:,i]/norm(D[:,i])
+        elif(i == 2 or i == 4):
+            pl[:,i] = iteracao_Fabrik(p[:,i+1],pl[:,i-1],b[i-1],Dl[:,i-1])[:,0]
+            v1 = pl[:,i] - pl[:,i-1]
+            v1 = v1/norm(v1)
+            Dl[:,i] = v1
+        elif(i == 0):
+            pl[:,0] = [0,0,0]
+    pl[:,7]  = iteracao_Fabrik(p[:,7],pl[:,6],b[6],Dl[:,6])[:,0]
+    p = pl
+    D = Dl
+    erro = distancia(p[:,n],destino,3)
+    k = k +1
 
-
-
-n = np.array([[0,0,1]]).T
-p = np.array([[5,4,3]]).T
-p0 = np.array([[1,1,6]]).T
-
-#x = iteracao_Fabrik(p,p0,1,n)
-print('erro: ',erro)
-
+print('erro: ', erro)
+print('k: ',k)  
+print(p,'\n\n\n')
+print(D,'\n')
 
