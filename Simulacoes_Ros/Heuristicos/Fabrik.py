@@ -2,7 +2,9 @@
 from math import cos, sin, sqrt, pi,acos
 import numpy as np
 import random 
-
+import rospy
+from sensor_msgs.msg import JointState
+from std_msgs.msg import Header
 
 def vetor(v):
     #criar um vetor linha a partir de uma lista
@@ -81,15 +83,27 @@ def S(a):
 def acosr(x):
     return acos(np.round(x,5))
 
+#configurando o Rviz
+pub = rospy.Publisher('joint_states', JointState, queue_size=10)
+rospy.init_node('joint_state_publisher')
+rate = rospy.Rate(100) # 100hz 
+hello_str = JointState()
+hello_str.header = Header()
+hello_str.header.stamp = rospy.Time.now()
+hello_str.name = ['One_joint', 'Two_joint', 'Three_joint', 'Four_joint'\
+    ,'Five_joint','Six_joint','Seven_joint','L_F_joint','R_F_joint']
+hello_str.position  = [0,0,0,0,0,0,0,0,0]    
+hello_str.velocity = []
+hello_str.effort = []
+
 n = 7 #numero de juntas
 direcoes = [1,2,1,2,1,2,3] #1 - z, 2 - x, 3 -y  direcao iniciail do vetor de atuacao da junta
 x  = vetor([1,0,0])
 y  = vetor([0,1,0])
 z  = vetor([0,0,1])
-#destino = 20*vetor([1,0.7,1])
-destino = vetor([0.4,0.4,0.4])
+destino = -vetor([0.4,0.4,0.4])
 dif_angular = [0,0,0,0,0,pi/2,0] #diferenca angular em relacao a junta anterior
-b = 5*np.array([2,1,2,1,2,1,2]) #comprimento dos elos 
+b = np.array([0.1,0.2,0.1,0.2,0.1,0.2,0.2])
 D = np.zeros([3,n])
 for cont in range(n):
     if(direcoes[cont] == 1): #Se z
@@ -102,11 +116,12 @@ for cont in range(n):
 px = np.zeros([1,8])
 py = np.zeros([1,8])
 #pz = 5*np.array([[0,2,3,5,6,8,9,11]])
-pz = np.array([[0.2,0.1,0.2,0.1,0.2,0.1,0.2,0.2]])
+pz = np.array([[0.2,0.3,0.5,0.6,0.8,0.9,1.1,1.3]])
 p = np.zeros([3,n+1]) #posicao inicial das juntas
 p[0,:] = px
 p[1,:] = py
 p[2,:] = pz
+pcte = p[:,0].copy()
 pl = p
 Dl = D
 erro = distancia(p[:,n],destino,3)
@@ -136,7 +151,7 @@ while(erro > erromin and k < K):
                 v1 = vetor(paux - pl[:,i])
                 v1 = v1/norm(v1)
                 v2 = vetor(Dl[:,i+2])
-                th = np.real(acos(v1.T@v2))
+                th = np.real(acosr(v1.T@v2))
                 Dl[:,i] = rotationar_vetor(v2,vetor(Dl[:,i+1]),(pi/2) - th)[:,0] 
                 Dl[:,i] = Dl[:,i]/norm(D[:,i])
             else: #Se for a junta prev for hinge
@@ -151,12 +166,12 @@ while(erro > erromin and k < K):
             v1 = pl[:,i] - pl[:,i+1]
             v1 = v1/norm(v1)
             Dl[:,i] = -v1
-    #if(k == 1): break
+ 
     Dl[:,0] = [0,0,1]
     pl[:,0] = pl[:,1] - b[0]*Dl[:,0] 
     D = Dl
     p = pl
-    #até aqui está certo
+
     #Backward
     for i in range(0,n):
         if(i == 1 or i == 3 or i == 5 or i == 6): #Se for junta Hinge
@@ -167,7 +182,7 @@ while(erro > erromin and k < K):
                 v1 = v1/norm(v1)
                 if(i != 1): v2 = vetor(Dl[:,i-2])
                 else: v2 = np.array([[1,0,0]]).T
-                th = np.real(acos(v1.T@v2))
+                th = np.real(acosr(v1.T@v2))
                 Dl[:,i] = rotationar_vetor(v2,vetor(Dl[:,i-1]),(pi/2) - th)[:,0] 
                 Dl[:,i] = Dl[:,i]/norm(D[:,i])
             else: #Se i = 6
@@ -183,7 +198,7 @@ while(erro > erromin and k < K):
             v1 = v1/norm(v1)
             Dl[:,i] = v1
         elif(i == 0):
-            pl[:,0] = [0,0,0]
+            pl[:,0] = pcte #[0,0,0.2]
     pl[:,7]  = iteracao_Fabrik(p[:,7],pl[:,6],b[6],Dl[:,6])[:,0]
     p = pl
     D = Dl
@@ -192,8 +207,7 @@ while(erro > erromin and k < K):
 
 print('erro: ', erro)
 print('k: ',k)  
-print(p,'\n\n\n')
-print(D,'\n')
+print('p',p[:,7])
 
 #Conversão da solução gráfica em um vetor de ângulo
 x  = vetor([1,0,0])
@@ -235,4 +249,9 @@ v = rotationar_vetor(v_aux2,vetor(D[:,5]),pi/2)
 q[6] = acosr(v_aux.T@v_aux2)
 if(v_aux.T@v < 0): q[6] = -q[6]
 
-print(q*(180/pi))
+while not rospy.is_shutdown():
+        #atualiaza os angulos do manipulador no Rviz
+        hello_str.header.stamp = rospy.Time.now()
+        hello_str.position = [q[0,0],q[1,0],q[2,0],q[3,0],q[4,0],q[5,0],q[6,0],0,0]
+        pub.publish(hello_str)
+        rate.sleep()  
