@@ -1,4 +1,11 @@
-#PSO aplicado ao pionner 3D
+#Autor David Oliveira
+#Estudante de Engenharia Eletrônica da Universidade Federal de Sergipe-UFS
+#Membro do Grupo de Pesquisa em Robotica da UFS-GPRUFS
+#Implementação do Particle Swarm Optimizarion
+#para encontrar encontrar uma configuração q
+#dada uma posição (x,y,z) e uma orientação 
+#no espaço para o Pioneer 7DOF
+
 from random import random,uniform
 from math import pi,cos,sin,sqrt,atan2
 import numpy as np
@@ -8,12 +15,11 @@ from std_msgs.msg import Header
 
 def matriz_homogenea(d,a,alfa,theta):
     #retorna a matriz homogênea a partir do parâmetros de DH
-    c = 5 #numero de casas decimais
-    L1 = np.array([round(cos(theta),c), round(-sin(theta)*cos(alfa),c),\
-        round(sin(theta)*sin(alfa),c),round(a*cos(theta),c)])
-    L2 = np.array([round(sin(theta),c), round(cos(theta)*cos(alfa),c),\
-        round(-cos(theta)*sin(alfa),c),round(a*sin(theta),c)])
-    L3 = np.array([0, round(sin(alfa),c), round(cos(alfa),c), d])
+    L1 = np.array([cos(theta), -sin(theta)*cos(alfa),\
+                sin(theta)*sin(alfa),a*cos(theta)])
+    L2 = np.array([sin(theta), cos(theta)*cos(alfa),\
+                -cos(theta)*sin(alfa),a*sin(theta)])
+    L3 = np.array([0,sin(alfa), cos(alfa), d])
     L4 = np.array([0,0,0,1])
     A = np.array([L1,L2,L3,L4])
     return A
