@@ -354,7 +354,7 @@ def Cinematica_Direta(q):
     e3_0 = T7@e3_7
     e4_0 = T7@e4_7
     
-    pontos = np.array([p[0:3,0],p1_0[0:3,0],p2_0[0:3,0],p3_0[0:3,0],p4_0[0:3,0]\
+    pontos = np.array([p1_0[0:3,0],p2_0[0:3,0],p3_0[0:3,0],p4_0[0:3,0]\
                     ,p5_0[0:3,0],p6_0[0:3,0],p7_0[0:3,0],p8_0[0:3,0]]).T
     return pontos
 
@@ -365,7 +365,7 @@ ax =  fig.add_subplot(111, projection = '3d')
 #destino = np.array([[0.2,0.5,0.6]]).T
 destino = np.array([[0.5*random.random(),0.5*random.random(),0.6*random.random()]]).T
 q = np.array([[0.0,0.0,0.0,0.0,0.0,0.0,0.0]]).T
-
+n = 7 #número de juntas
 #Comprimento dos elos do manipulador
 b1 = 0.2 #20 cm
 b2 = 0.1
@@ -401,8 +401,8 @@ alpha7 = pi/2
 
 
 
-for k in range(10):
-    ### parametros de DH variáveis
+for k in range(25):
+    # parametros de DH variáveis
     theta1 = pi/2 + q[0]
     theta2 = q[1]
     theta3 = q[2]
@@ -437,117 +437,37 @@ for k in range(10):
     v5 = vetor(T5[0:3,1]) #y
     v6 = vetor(T6[0:3,1])
     v7 = vetor(T7[0:3,1]) #y
-
-    #primeira interação
-    pontos = Cinematica_Direta(q)
-    print(distancia(pontos[:,8],destino,3))
-    proj = projecao_ponto_plano(v7,pontos[:,7],destino[:])
-    va = proj - vetor(pontos[:,7])
-    va = va/norm(va)
-    proj = projecao_ponto_plano(v7,pontos[:,7],vetor(pontos[:,8]))
-    vb = proj - vetor(pontos[:,7])
-    vb = vb/norm(vb)
-    th = acosr(va.T@vb)
-    v = rotationar_vetor(va,v7,-pi/2)
-    if(vb.T@v < 0): th = -th
-    q[6,0] = q[6,0] + th
-
-
-
-    #segunda interação
-    pontos = Cinematica_Direta(q)
-    print(distancia(pontos[:,8],destino,3))
-    proj = projecao_ponto_plano(v6,pontos[:,6],destino[:])
-    va = proj - vetor(pontos[:,6])
-    va = va/norm(va)
-    proj = projecao_ponto_plano(v6,pontos[:,6],vetor(pontos[:,8]))
-    vb = proj - vetor(pontos[:,6])
-    vb = vb/norm(vb)
-    th = acosr(va.T@vb)
-    v = rotationar_vetor(va,v6,-pi/2)
-    if(vb.T@v < 0): th = -th
-    q[5,0] = q[5,0] + th
-
-    #terceira interação
-    pontos = Cinematica_Direta(q)
-    print(distancia(pontos[:,8],destino,3))
-    proj = projecao_ponto_plano(v5,pontos[:,5],destino[:])
-    va = proj - vetor(pontos[:,5])
-    va = va/norm(va)
-    proj = projecao_ponto_plano(v5,pontos[:,5],vetor(pontos[:,8]))
-    vb = proj - vetor(pontos[:,5])
-    vb = vb/norm(vb)
-    th = acosr(va.T@vb)
-    v = rotationar_vetor(va,v5,-pi/2)
-    if(vb.T@v < 0): th = -th
-    q[4,0] = q[4,0] + th
-
-
-    #quarta interação
-    pontos = Cinematica_Direta(q)
-    print(distancia(pontos[:,8],destino,3))
-    proj = projecao_ponto_plano(v4,pontos[:,4],destino[:])
-    va = proj - vetor(pontos[:,4])
-    va = va/norm(va)
-    proj = projecao_ponto_plano(v4,pontos[:,4],vetor(pontos[:,8]))
-    vb = proj - vetor(pontos[:,4])
-    vb = vb/norm(vb)
-    th = acosr(va.T@vb)
-    v = rotationar_vetor(va,v4,pi/2)
-    if(vb.T@v < 0): th = -th
-    q[3,0] = q[3,0] + th #estava -
-
-    #quinta interação
-    pontos = Cinematica_Direta(q)
-    print(distancia(pontos[:,8],destino,3))
-    proj = projecao_ponto_plano(v3,pontos[:,3],destino[:])
-    va = proj - vetor(pontos[:,3])
-    va = va/norm(va)
-    proj = projecao_ponto_plano(v3,pontos[:,3],vetor(pontos[:,8]))
-    vb = proj - vetor(pontos[:,3])
-    vb = vb/norm(vb)
-    th = acosr(va.T@vb)
-    v = rotationar_vetor(va,v3,-pi/2)
-    if(vb.T@v < 0): th = -th
-    q[2,0] = q[2,0] + th #estava - 
-
-    #sexta interação
-    pontos = Cinematica_Direta(q)
-    print(distancia(pontos[:,8],destino,3))
-    proj = projecao_ponto_plano(v2,pontos[:,2],destino[:])
-    va = proj - vetor(pontos[:,2])
-    va = va/norm(va)
-    proj = projecao_ponto_plano(v2,pontos[:,2],vetor(pontos[:,8]))
-    vb = proj - vetor(pontos[:,2])
-    vb = vb/norm(vb)
-    th = acosr(va.T@vb)
-    v = rotationar_vetor(va,v2,pi/2)
-    if(vb.T@v < 0): th = -th
-    q[1,0] = q[1,0] + th #estava -
-
-    #sétima interação
-    pontos = Cinematica_Direta(q)
-    print(distancia(pontos[:,8],destino,3))
-    proj = projecao_ponto_plano(v1,pontos[:,1],destino[:])
-    va = proj - vetor(pontos[:,1])
-    va = va/norm(va)
-    proj = projecao_ponto_plano(v1,pontos[:,1],vetor(pontos[:,8]))
-    vb = proj - vetor(pontos[:,1])
-    vb = vb/norm(vb)
-    th = acosr(va.T@vb)
-    v = rotationar_vetor(va,v1,-pi/2)
-    if(vb.T@v < 0): th = -th
-    q[0,0] = q[0,0] + th #estava -
+    Vy = np.array([T1[0:3,1],T2[0:3,1],T3[0:3,1],T4[0:3,1],T5[0:3,1],T6[0:3,1],T7[0:3,1]]).T
+    pontos = Cinematica_Direta(q) 
+    erro = distancia(pontos[:,7],destino,3) 
+    for i in range(n-1,-1,-1):
+        pontos = Cinematica_Direta(q) 
+        proj = projecao_ponto_plano(vetor(Vy[:,i]),pontos[:,i],destino[:])
+        va = proj - vetor(pontos[:,i])
+        va = va/norm(va)
+        proj = projecao_ponto_plano(vetor(Vy[:,i]),pontos[:,i],vetor(pontos[:,7]))
+        vb = proj - vetor(pontos[:,i])
+        vb = vb/norm(vb)
+        th = acosr(va.T@vb)
+        j = i + 1
+        if(j == 4 or j ==2):
+            v = rotationar_vetor(va,vetor(Vy[:,i]),pi/2)
+        else:
+           v = rotationar_vetor(va,vetor(Vy[:,i]),-pi/2) 
+        if(vb.T@v < 0): th = -th
+        q[i,0] = q[i,0] + th
+        pontos = Cinematica_Direta(q)
+        erro_anterior = erro
+        erro = distancia(pontos[:,7],destino,3) 
+        if(erro_anterior < erro):
+            print('Deu ruim',j)
+            break
 
     pontos = Cinematica_Direta(q)
-    erro = distancia(pontos[:,8],destino,3) 
+    erro = distancia(pontos[:,7],destino,3) 
     print(erro,'\n','fim da interacao:',k,'\n')
     if(erro < 10**-5):
         break
 
-plot(q,destino)
-#plt.plot([destino[0,0],pontos[0,3]],[destino[1,0],pontos[1,3]],[destino[2,0],pontos[2,3]],'red')
-#plt.plot([pontos[0,3],pontos[0,8]],[pontos[1,3],pontos[1,8]],[pontos[2,3],pontos[2,8]],'green')
-#plt.plot([proj[0,0],pontos[0,7]],[proj[1,0],pontos[1,7]],[proj[2,0],pontos[2,7]],'green')
-#ax.scatter(proj[0,0],proj[1,0],proj[2,0],'green')
-plt.pause(1000)
+#plot(q,destino)
+#plt.pause(2)
