@@ -1,5 +1,11 @@
-# %%
-#Método do Gauss Newton/Pseudo inverso aplicado ao problema de IK completo (posição e orientação)
+#Autor David Oliveira
+#Estudante de Engenharia Eletrônica da Universidade Federal de Sergipe-UFS
+#Membro do Grupo de Pesquisa em Robotica da UFS-GPRUFS
+#Implementação do Método do Gauss Newton/Pseudo inverso 
+#para encontrar encontrar uma configuração q
+#dada uma posição (x,y,z) com orientação definida
+#no espaço para o Pioneer 7DOF
+#aplicado ao problema de IK completo (posição e orientação)
 from math import cos, sin, sqrt, pi, atan2
 import numpy as np
 import random 
