@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
-<!--cd ~/catkin_ws/src roslaunch urdf_tutorial display.launch model:="custom_robotic_arm/urdf/robotic_arm.urdf"
--->
+<!-- Primeiro abra o terminal -->
+<!--cd ~/catkin_ws/src -->
+<!--roslaunch urdf_tutorial display.launch model:="custom_robotic_arm/urdf/pioneer_7dof2.urdf"-->
 <robot name="robotic_arm">
     <link name="world"/>
     <!--ONE-->
