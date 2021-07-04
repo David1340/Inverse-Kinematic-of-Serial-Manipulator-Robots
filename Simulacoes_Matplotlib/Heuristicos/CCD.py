@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import axes3d
-from math import cos, sin, sqrt, pi, acos,atan2 
+from math import cos, sin, sqrt, pi, acos
 import numpy as np
 import random 
 
@@ -67,17 +67,6 @@ def matriz_homogenea(d,a,alfa,theta):
     L3 = np.array([0,sin(alfa),cos(alfa), d])
     L4 = np.array([0.0,0.0,0.0,1.0])
     A = np.array([L1,L2,L3,L4])
-    return A
-
-def matriz_antissimetrica(a):
-    #A = [0,-az,ay ; az,0,-ax ; -ay,ax,0]
-    A = np.zeros((3,3))
-    A[0,1] = -a[2,0]
-    A[0,2] = a[1,0]
-    A[1,2] = -a[0,0]
-    A[1,0] = - A[0,1]
-    A[2,0] = - A[0,2]
-    A[2,1] = - A[1,2]
     return A
 
 #Calcula a distancia Euclidiana entre dois pontos no R^n
