@@ -1,5 +1,12 @@
-# %%
-#Método do Damped Last Square aplicado ao problema de IK completo (posição e orientação)
+#Autor David Oliveira
+#Estudante de Engenharia Eletrônica da Universidade Federal de Sergipe-UFS
+#Membro do Grupo de Pesquisa em Robotica da UFS-GPRUFS
+#Implementação do Damped Last Square 
+#para encontrar encontrar uma configuração q
+#dada uma posição (x,y,z) e uma orientação (angulos de euler)
+#no espaço para o Pioneer 7DOF
+
+
 from math import cos, sin, sqrt, pi, atan2
 import numpy as np
 import random 
