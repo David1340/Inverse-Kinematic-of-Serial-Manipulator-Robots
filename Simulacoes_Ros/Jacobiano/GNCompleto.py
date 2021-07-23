@@ -233,14 +233,14 @@ while not rospy.is_shutdown():
        
         #Calculo da erro
         f = np.zeros([6,1])
-        f[0:3] = -(pos_d - p_0[0:3])
+        f[0:3] = pos_d - p_0[0:3]
         #a parte angular peguei do artigo A closed-loop inverse kinematic scheme
         #online joint based robot control
-        f[3:6] = 0.5*(S(orient_d[:,0])@T7[0:3,0:1] + S(orient_d[:,1])@T7[0:3,1:2]  + \
-                    S(orient_d[:,2])@T7[0:3,2:3])
+        f[3:6] = 0.5*(S(T7[0:3,0:1])@orient_d[:,0:1]+ S(T7[0:3,1:2])@orient_d[:,1:2]  + \
+            S(T7[0:3,2:3])@orient_d[:,2:3])
         
         #Equação da Pseudo Inversa a Direita
-        dq = - alfa*((J.T@np.linalg.inv(J@J.T))@f) 
+        dq = alfa*((J.T@np.linalg.inv(J@J.T))@f) 
 
         #limitando o delta q
         for i2 in range(np.size(dq)):

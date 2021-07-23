@@ -194,10 +194,10 @@ while not rospy.is_shutdown():
         J[:,6] = matriz_antissimetrica(z6_0)@(o7_0[0:3] - o6_0[0:3])[:,0]
 
         #erro
-        f = p_0[0:3] - destino
+        f = destino - p_0[0:3]
         
         #Equação do DLS
-        dq =  - alfa*((J.T@np.linalg.inv(J@J.T + lbd*I))@f)
+        dq =  alfa*((J.T@np.linalg.inv(J@J.T + lbd*I))@f)
                 
         #limitando o delta q
         for i2 in range(np.size(dq)):
