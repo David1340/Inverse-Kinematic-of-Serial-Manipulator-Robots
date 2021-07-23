@@ -1,5 +1,8 @@
-# %%
-#Método Gauss Newton/Pseudo Inversa aplicado ao problema de IK incompleto (apenas  a posição)
+#Autor David Oliveira
+#Estudante de Engenharia Eletrônica da Universidade Federal de Sergipe-UFS
+#Membro do Grupo de Pesquisa em Robotica da UFS-GPRUFS
+#Implementação do Método Gauss Newton/Pseudo Inversa  para encontrar uma configuação q 
+#dada uma posição (x,y,z) no espaço para o Pioneer 7DOF
 from math import cos, sin, sqrt, pi, atan2
 import numpy as np
 import random 

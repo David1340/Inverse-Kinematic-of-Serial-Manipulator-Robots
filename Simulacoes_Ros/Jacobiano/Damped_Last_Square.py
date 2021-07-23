@@ -1,6 +1,12 @@
-# %%
-#Método do Damped Last Square aplicado ao problema de IK incompleto (apenas  a posição)
-from math import cos, sin, sqrt, pi, atan2
+#Autor David Oliveira
+#Estudante de Engenharia Eletrônica da Universidade Federal de Sergipe-UFS
+#Membro do Grupo de Pesquisa em Robotica da UFS-GPRUFS
+#Implementação do Damped Last Square 
+#para encontrar encontrar uma configuração q
+#dada uma posição (x,y,z) 
+#no espaço para o Pioneer 7DOF
+
+from math import cos, sin, sqrt, pi
 import numpy as np
 import random 
 import rospy
@@ -9,13 +15,14 @@ from std_msgs.msg import Header
 
 #Retorna a Matriz de transformacao Homogeneadados  usando como entrada os parametros de DH
 def matriz_homogenea(d,a,alfa,theta):
-    L1 = np.array([round(cos(theta),4), round(-sin(theta)*cos(alfa),4), round(sin(theta)*sin(alfa),4),round(a*cos(theta),4)])
-    L2 = np.array([round(sin(theta),4), round(cos(theta)*cos(alfa),4),round(-cos(theta)*sin(alfa),4),round(a*sin(theta),4)])
-    L3 = np.array([0, round(sin(alfa),4), round(cos(alfa),4), d])
-    L4 = np.array([0,0,0,1])
+    L1 = np.array([cos(theta),-sin(theta)*cos(alfa),sin(theta)*sin(alfa),a*cos(theta)])
+    L2 = np.array([sin(theta),cos(theta)*cos(alfa),-cos(theta)*sin(alfa),a*sin(theta)])
+    L3 = np.array([0,sin(alfa),cos(alfa), d])
+    L4 = np.array([0.0,0.0,0.0,1.0])
     A = np.array([L1,L2,L3,L4])
     return A
 
+#Matriz Antissimetrica
 def matriz_antissimetrica(a):
     #A = [0,-az,ay ; az,0,-ax ; -ay,ax,0]
     A = np.zeros((3,3))
@@ -210,8 +217,3 @@ while not rospy.is_shutdown():
     break    
 print('\n',p_0)
 
-
-
-    
-
-# %%
