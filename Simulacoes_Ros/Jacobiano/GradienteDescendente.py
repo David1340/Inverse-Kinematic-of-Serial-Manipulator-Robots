@@ -188,7 +188,7 @@ while not rospy.is_shutdown():
         J[:,6] = matriz_antissimetrica(z6_0)@(o7_0[0:3] - o6_0[0:3])[:,0]
 
         #erro
-        f = p_0[0:3] - destino
+        f =  destino - p_0[0:3] 
         
         #cálculo da constante de passo c
         e = np.array([f[0,0],f[1,0],f[2,0]])
@@ -196,7 +196,7 @@ while not rospy.is_shutdown():
         #artigo Inverse Kinematics Techniques in Computer Graphics: A Survey
 
         #Equação do Jacobiano Transposto
-        dq = - c*(J.T@f)
+        dq =  c*(J.T@f)
                 
         #limitando o delta q
         for i2 in range(np.size(dq)):

@@ -96,7 +96,7 @@ qlim = [(pi)-c,pi/2,(pi)-c,(pi)-c,(pi)-c,(pi)-c,(pi)-c]
 #posição desejada
 pos_d = np.array([[0.3,0.3,0.6]]).T 
 #Orientação desejada (RPY)
-RPY_d = np.array([0,0,0])
+RPY_d = np.array([0,pi/2,0])
 orient_d = matriz_RPY(RPY_d)
 
 #vetores colunas do sistema de coordenadas global
@@ -232,11 +232,11 @@ while not rospy.is_shutdown():
        
         #Calculo da erro
         f = np.zeros([6,1])
-        f[0:3] = -(pos_d - p_0[0:3])
+        f[0:3] = pos_d - p_0[0:3]
         #a parte angular peguei do artigo A closed-loop inverse kinematic scheme
         #online joint based robot control
-        f[3:6] = +0.5*(S(orient_d[:,0])@T7[0:3,0:1] + S(orient_d[:,1])@T7[0:3,1:2]  + \
-                    S(orient_d[:,2])@T7[0:3,2:3])
+        f[3:6] = 0.5*(S(T7[0:3,0:1])@orient_d[:,0:1]+ S(T7[0:3,1:2])@orient_d[:,1:2]  + \
+            S(T7[0:3,2:3])@orient_d[:,2:3])
         
         #cálculo da constante de passo c
         e = np.array([f[0,0],f[1,0],f[2,0],f[3,0],f[4,0],f[5,0]])
@@ -244,7 +244,7 @@ while not rospy.is_shutdown():
         #artigo Inverse Kinematics Techniques in Computer Graphics: A Survey
 
         #Equação do Jacobiano Transposto
-        dq = - c*(J.T@f)
+        dq = c*(J.T@f)
 
         #limitando o delta q
         for i2 in range(np.size(dq)):
