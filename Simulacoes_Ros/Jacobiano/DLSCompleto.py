@@ -100,7 +100,7 @@ qlim = [(pi)-c,pi/2,(pi)-c,(pi)-c,(pi)-c,(pi)-c,(pi)-c]
 
 #Objetivos
 #posição desejada
-pos_d = np.array([[0.3,0.3,0.6]]).T 
+pos_d = np.array([[0.2,0.2,0.3]]).T 
 #Orientação desejada (RPY)
 RPY_d = np.array([0,pi/2,0])
 orient_d = matriz_RPY(RPY_d)
@@ -114,24 +114,16 @@ q = np.zeros([7,1])
 for a in range(np.size(q)):
    q[a] = random.uniform(-qlim[a],qlim[a])
 
-#Parâmetros Físicos do manipulador
-#Comprimento dos elos do manipulador
-b1 = 0.2 #20 cm
-b2 = 0.1
-b3 = 0.2 
-b4 = 0.1
-b5 = 0.2
-b6 = 0.1
-b7 = 0.2
-#comprimento do elo que liga a junta 7 ao efetuador
-L = 0.2 
+#Parâmetros Físicos do manipulador [m]
+base = 0.05 #5 cm
+L = 0.075 #distância da ultima junta a extremidade do efetuador
 
-### parametros de DH constantes
-d1 = b1 + b2
+#parametros de DH constantes
+d1 = 0.075 + base
 d2 = 0
-d3 = b3 + b4
+d3 = 0.15
 d4 = 0 
-d5 = b5 + b6
+d5 = 0.145
 d6 = 0
 d7 = 0
 a1 = 0
@@ -139,7 +131,7 @@ a2 = 0
 a3 = 0
 a4 = 0
 a5 = 0
-a6 = b7
+a6 = 0.075
 a7 = 0
 alpha1 = pi/2
 alpha2 = -pi/2

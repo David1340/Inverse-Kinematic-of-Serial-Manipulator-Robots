@@ -1,9 +1,12 @@
 #Autor David Oliveira
 #Estudante de Engenharia Eletrônica da Universidade Federal de Sergipe-UFS
 #Membro do Grupo de Pesquisa em Robotica da UFS-GPRUFS
-#Implementação do Método Gauss Newton/Pseudo Inversa  para encontrar uma configuação q 
-#dada uma posição (x,y,z) no espaço para o Pioneer 7DOF
-from math import cos, sin, sqrt, pi, atan2
+#Implementação do Damped Last Square 
+#para encontrar encontrar uma configuração q
+#dada uma posição (x,y,z) 
+#no espaço para o Pioneer 7DOF
+
+from math import cos, sin, sqrt, pi
 import numpy as np
 import random 
 import rospy
@@ -12,13 +15,14 @@ from std_msgs.msg import Header
 
 #Retorna a Matriz de transformacao Homogeneadados  usando como entrada os parametros de DH
 def matriz_homogenea(d,a,alfa,theta):
-    L1 = np.array([round(cos(theta),4), round(-sin(theta)*cos(alfa),4), round(sin(theta)*sin(alfa),4),round(a*cos(theta),4)])
-    L2 = np.array([round(sin(theta),4), round(cos(theta)*cos(alfa),4),round(-cos(theta)*sin(alfa),4),round(a*sin(theta),4)])
-    L3 = np.array([0, round(sin(alfa),4), round(cos(alfa),4), d])
-    L4 = np.array([0,0,0,1])
+    L1 = np.array([cos(theta),-sin(theta)*cos(alfa),sin(theta)*sin(alfa),a*cos(theta)])
+    L2 = np.array([sin(theta),cos(theta)*cos(alfa),-cos(theta)*sin(alfa),a*sin(theta)])
+    L3 = np.array([0,sin(alfa),cos(alfa), d])
+    L4 = np.array([0.0,0.0,0.0,1.0])
     A = np.array([L1,L2,L3,L4])
     return A
 
+#Matriz Antissimetrica
 def matriz_antissimetrica(a):
     #A = [0,-az,ay ; az,0,-ax ; -ay,ax,0]
     A = np.zeros((3,3))
@@ -53,14 +57,18 @@ hello_str.effort = []
 #variaveis do método
 cont = 0
 alfa = 0.1 #tamanho do passo
-qmax = 0.1 #passo maximo entre atualizacoes das juntas
+lbd = 0.005 #lambda
+I = np.eye(3)
+qmax = 0.1#passo maximo entre atualizacoes das juntas
 
 #restrições de cada ângulo
-c = pi/12 
+c = pi/12
 qlim = [(pi)-c,pi/2,(pi)-c,(pi)-c,(pi)-c,(pi)-c,(pi)-c] #valor maximo que a junta pode assumir
+thmax = np.array(qlim)
 
+thmin = -thmax
 #objetivo
-destino = np.array([[0.2,0.2,0.3]]).T
+destino = np.array([[0.5,0.4,0.3]]).T
 
 #vetores colunas do sistema de coordenadas global
 k = np.array([[0,0,1,1]]).T
@@ -70,17 +78,23 @@ o = np.array([[0,0,0,1]]).T #origem
 q = np.zeros([7,1])
 for a in range(np.size(q)):
     q[a] = random.uniform(-qlim[a],qlim[a])
+#q = np.array([[-0.83,-0.92,1.67,-0.21,-0.32,1.02,-0.93]]).T
+#Parâmetros físicos do Robô
+b1 = 0.2 #20 cm
+b2 = 0.1
+b3 = 0.2 
+b4 = 0.1
+b5 = 0.2
+b6 = 0.1
+b7 = 0.2
+L = 0.2 #comprimento do elo que liga a junta 7 ao efetuador
 
-#Parâmetros Físicos do manipulador [m]
-base = 0.05 #5 cm
-L = 0.075 #distância da ultima junta a extremidade do efetuador
-
-#parametros de DH constantes
-d1 = 0.075 + base
+# parametros de DH constantes
+d1 = b1 + b2
 d2 = 0
-d3 = 0.15
+d3 = b3 + b4
 d4 = 0 
-d5 = 0.145
+d5 = b5 + b6
 d6 = 0
 d7 = 0
 a1 = 0
@@ -88,7 +102,7 @@ a2 = 0
 a3 = 0
 a4 = 0
 a5 = 0
-a6 = 0.075
+a6 = b7
 a7 = 0
 alpha1 = pi/2
 alpha2 = -pi/2
@@ -98,6 +112,8 @@ alpha5 = pi/2
 alpha6 = pi/2
 alpha7 = pi/2
 
+w_atual = np.zeros([7,1])
+w_anterior = w_atual
 while not rospy.is_shutdown():
     for v in range(1000):
         
@@ -147,10 +163,10 @@ while not rospy.is_shutdown():
         p_0 = T7@p_7
 
        #atualiaza os angulos do manipulador no Rviz
-        hello_str.header.stamp = rospy.Time.now()
-        hello_str.position = [q[0,0],q[1,0],q[2,0],q[3,0],q[4,0],q[5,0],q[6,0],0,0]
-        pub.publish(hello_str)
-        rate.sleep()        
+        #hello_str.header.stamp = rospy.Time.now()
+        #hello_str.position = [q[0,0],q[1,0],q[2,0],q[3,0],q[4,0],q[5,0],q[6,0],0,0]
+        #pub.publish(hello_str)
+        #rate.sleep()        
         
         #Calcula a distancia entre o efetuador a o objetivo(Posição)
         erro = distancia(p_0,destino,3)
@@ -183,10 +199,31 @@ while not rospy.is_shutdown():
 
         #erro
         f = destino - p_0[0:3]
+        #Jp = (J.T@np.linalg.inv(J@J.T + lbd*I)) #pseudo inversa á direita
+    
+        W = np.zeros([7,7])
+
+        for i2 in range(7):
+            num = ((thmax[i2] - thmin[i2])**2)*(2*q[i2] - thmax[i2]-thmin[i2]) #numerador
+            den = 4*((thmax[i2]  - q[i2])**2)*((q[i2]-thmin[i2])**2)
+            if(v >= 2):
+                w_anterior[i2] = w_atual[i2]
+            w_atual[i2] = np.abs(num/den)
+            if(v >= 2):
+                if(w_atual[i2] >= w_anterior[i2]):                  
+                    W[i2,i2] = 1 + np.abs(num/den)
+                else:
+                    W[i2,i2] = 1
+            else: 
+                W[i2,i2] = 1 + np.abs(num/den)
         
-        #Equação do GN
-        dq = alfa*((J.T@np.linalg.inv(J@J.T))@f)
-                
+
+        #Equação do DLS
+        #dq =  alfa*Jp@f
+        Wi = np.linalg.inv(W)
+
+        dq = alfa*Wi@J.T@np.linalg.inv(J@Wi@J.T + lbd*I)@f
+   
         #limitando o delta q
         for i2 in range(np.size(dq)):
             if(dq[i2] > qmax):
@@ -199,14 +236,13 @@ while not rospy.is_shutdown():
 
         for i2 in range(np.size(q)):
             if(q[i2] > qlim[i2]):
-                q[i2] = qlim[i2]
+                q[i2] = qlim[i2] - 0.001
+                print('passou ',v)
             elif(q[i2] < -qlim[i2]):
-                q[i2] = -qlim[i2]
+                q[i2] = -qlim[i2] + 0.001
+                print('passou ', v)
+                
+
     break    
 print('\n',p_0)
 
-
-
-    
-
-# %%

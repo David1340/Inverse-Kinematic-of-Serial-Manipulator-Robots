@@ -71,25 +71,19 @@ class particle:
             
     def update_fuction(self,o,o2): #Calcula a função de custo/fitness da particula
         #(posição,orientação) da pose desejada
-        #Parâmetros físicos do robô, comprimento dos links
-        b1 = 0.2 #20 cm
-        b2 = 0.1
-        b3 = 0.2 
-        b4 = 0.1
-        b5 = 0.2
-        b6 = 0.1
-        b7 = 0.2
-        L = 0.2 
+        #Parâmetros Físicos do manipulador [m]
+        base = 0.05 #5 cm
+        L = 0.075 #distância da ultima junta a extremidade do efetuador
 
         #centro do efetuador em relação ao ultimo sistema de coordenada
         p = np.array([0,0,L,1]).T
 
         #Parâmetros de Denavit-Hartenberg do manipulado
-        d1 = b1 + b2
+        d1 = 0.075 + base
         d2 = 0
-        d3 = b3 + b4
+        d3 = 0.15
         d4 = 0 
-        d5 = b5 + b6
+        d5 = 0.145
         d6 = 0
         d7 = 0
         a1 = 0
@@ -97,7 +91,7 @@ class particle:
         a3 = 0
         a4 = 0
         a5 = 0
-        a6 = b7
+        a6 = 0.075
         a7 = 0
         alpha1 = pi/2
         alpha2 = -pi/2
@@ -200,7 +194,7 @@ hello_str.velocity = []
 hello_str.effort = []
 
 #objetivo
-objetivo = np.array([0.2,0.5,0.6]) #posição
+objetivo = np.array([0.2,0.2,0.3]) #posição
 objetivo2 = np.array([0,0,0]) #orientação
 numero_particulas = 200
 dimensao = 7 #dimensão do robô
@@ -212,3 +206,5 @@ while not rospy.is_shutdown():
     solucao = PSO(objetivo,objetivo2,numero_particulas,dimensao,L)
     print('Solução q = ', solucao)
     break
+
+
