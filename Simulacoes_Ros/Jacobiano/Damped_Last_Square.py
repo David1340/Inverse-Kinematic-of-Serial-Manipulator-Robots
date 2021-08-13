@@ -57,13 +57,12 @@ hello_str.effort = []
 #variaveis do método
 cont = 0
 alfa = 0.1 #tamanho do passo
-lbd = 0.05 #lambda
+lbd = 0.005 #lambda
 I = np.eye(3)
 qmax = 0.1 #passo maximo entre atualizacoes das juntas
 
-#restrições de cada ângulo
-c = pi/12 
-qlim = [(pi)-c,pi/2,(pi)-c,(pi)-c,(pi)-c,(pi)-c,(pi)-c] #valor maximo que a junta pode assumir
+#valor maximo que a junta pode assumir
+qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889] 
 
 #objetivo
 destino = np.array([[0.2,0.2,0.3]]).T
@@ -206,8 +205,10 @@ while not rospy.is_shutdown():
         for i2 in range(np.size(q)):
             if(q[i2] > qlim[i2]):
                 q[i2] = qlim[i2]
+                print('passou ',v)
             elif(q[i2] < -qlim[i2]):
                 q[i2] = -qlim[i2]
+                print('passou ',v)
     break    
 print('\n',p_0)
 

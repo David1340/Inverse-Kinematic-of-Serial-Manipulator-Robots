@@ -55,9 +55,8 @@ hello_str.effort = []
 #variaveis do método
 qmax = 0.1 #passo maximo entre atualizacoes das juntas
 
-#restrições de cada ângulo
-c = pi/12 
-qlim = [(pi)-c,pi/2,(pi)-c,(pi)-c,(pi)-c,(pi)-c,(pi)-c] #valor maximo que a junta pode assumir
+#valor maximo que a junta pode assumir
+qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889] 
 
 #objetivo
 destino = np.array([[0.2,0.2,0.3]]).T

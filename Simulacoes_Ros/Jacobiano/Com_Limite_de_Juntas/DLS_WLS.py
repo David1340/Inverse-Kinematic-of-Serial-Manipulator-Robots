@@ -61,9 +61,8 @@ lbd = 0.005 #lambda
 I = np.eye(3)
 qmax = 0.1#passo maximo entre atualizacoes das juntas
 
-#restrições de cada ângulo
-c = pi/12
-qlim = [(pi)-c,pi/2,(pi)-c,(pi)-c,(pi)-c,(pi)-c,(pi)-c] #valor maximo que a junta pode assumir
+#valor maximo que a junta pode assumir
+qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889] 
 thmax = np.array(qlim)
 
 thmin = -thmax

@@ -92,11 +92,8 @@ alfa = 0.1
 lbd = 0.05
 I = np.eye(6)
 
-
-#restrições de cada ângulo
-c = pi/12 
 #valor maximo que a junta pode assumir
-qlim = [(pi)-c,pi/2,(pi)-c,(pi)-c,(pi)-c,(pi)-c,(pi)-c] 
+qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889] 
 
 #Objetivos
 #posição desejada
