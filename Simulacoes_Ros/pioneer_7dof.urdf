@@ -47,7 +47,7 @@
             </collision>
         </link>
         <joint name="One_joint" type = "revolute">
-        <limit lower="-2.8798" upper="2.8798" effort="100.0" velocity="1.0"/>
+        <limit lower="-2.6179" upper="2.6179" effort="100.0" velocity="1.0"/>
         <!--(pi - pi/12 = 2.8798)-->
             <parent link ="base_link"/>
             <child link ="One"/>
@@ -75,7 +75,7 @@
             </collision>
         </link>
         <joint name="Two_joint" type = "revolute">
-        <limit lower="-1.5708" upper="1.5708" effort="100.0" velocity="1.0"/>
+        <limit lower="-1.5358" upper="1.5358" effort="100.0" velocity="1.0"/>
         <!--(pi/2 = 1.5708)-->
             <parent link ="One"/>
             <child link ="Two"/>
@@ -104,7 +104,7 @@
             </collision>
         </link>
         <joint name="Three_joint" type = "revolute">
-        <limit lower="-2.8798" upper="2.8798" effort="100.0" velocity="1.0"/>
+        <limit lower="-2.6179" upper="2.6179" effort="100.0" velocity="1.0"/>
         <!--(pi - pi/12 = 2.8798)-->
             <parent link ="Two"/>
             <child link ="Three"/>
@@ -133,7 +133,7 @@
             </collision>
         </link>
         <joint name="Four_joint" type = "revolute">
-        <limit lower="-2.8798" upper="2.8798" effort="100.0" velocity="1.0"/>
+        <limit lower="-1.6144" upper="1.6144" effort="100.0" velocity="1.0"/>
         <!--(pi - pi/12 = 2.8798)-->
             <parent link ="Three"/>
             <child link ="Four"/>
@@ -162,7 +162,7 @@
             </collision>
         </link>
         <joint name="Five_joint" type = "revolute">
-        <limit lower="-2.8798" upper="2.8798" effort="100.0" velocity="1.0"/>
+        <limit lower="-2.6179" upper="2.6179" effort="100.0" velocity="1.0"/>
         <!--(pi - pi/12 = 2.8798)-->
             <parent link ="Four"/>
             <child link ="Five"/>
@@ -192,7 +192,7 @@
         </link>
 
         <joint name="Six_joint" type = "revolute">
-        <limit lower="-2.8798" upper="2.8798" effort="100.0" velocity="1.0"/>
+        <limit lower="-1.8413" upper="1.8413" effort="100.0" velocity="1.0"/>
         <!--(pi - pi/12 = 2.8798)-->
             <parent link ="Five"/>
             <child link ="Six"/>
@@ -247,7 +247,7 @@
             </collision>
         </link>
         <joint name="Seven_joint" type = "revolute">
-        <limit lower="-2.8798" upper="2.8798" effort="100.0" velocity="1.0"/>
+        <limit lower="-1.7889" upper="1.7889" effort="100.0" velocity="1.0"/>
         <!--(pi - pi/12 = 2.8798)-->
             <parent link ="Aux"/>
             <child link ="Seven"/>
