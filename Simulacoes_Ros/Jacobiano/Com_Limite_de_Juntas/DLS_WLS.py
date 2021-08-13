@@ -68,7 +68,7 @@ thmax = np.array(qlim)
 
 thmin = -thmax
 #objetivo
-destino = np.array([[0.5,0.4,0.3]]).T
+destino = np.array([[0.2,0.2,0.3]]).T
 
 #vetores colunas do sistema de coordenadas global
 k = np.array([[0,0,1,1]]).T
@@ -78,23 +78,17 @@ o = np.array([[0,0,0,1]]).T #origem
 q = np.zeros([7,1])
 for a in range(np.size(q)):
     q[a] = random.uniform(-qlim[a],qlim[a])
-#q = np.array([[-0.83,-0.92,1.67,-0.21,-0.32,1.02,-0.93]]).T
-#Parâmetros físicos do Robô
-b1 = 0.2 #20 cm
-b2 = 0.1
-b3 = 0.2 
-b4 = 0.1
-b5 = 0.2
-b6 = 0.1
-b7 = 0.2
-L = 0.2 #comprimento do elo que liga a junta 7 ao efetuador
 
-# parametros de DH constantes
-d1 = b1 + b2
+#Parâmetros Físicos do manipulador [m]
+base = 0.05 #5 cm
+L = 0.075 #distância da ultima junta a extremidade do efetuador
+
+#parametros de DH constantes
+d1 = 0.075 + base
 d2 = 0
-d3 = b3 + b4
+d3 = 0.15
 d4 = 0 
-d5 = b5 + b6
+d5 = 0.145
 d6 = 0
 d7 = 0
 a1 = 0
@@ -102,7 +96,7 @@ a2 = 0
 a3 = 0
 a4 = 0
 a5 = 0
-a6 = b7
+a6 = 0.075
 a7 = 0
 alpha1 = pi/2
 alpha2 = -pi/2
@@ -163,10 +157,10 @@ while not rospy.is_shutdown():
         p_0 = T7@p_7
 
        #atualiaza os angulos do manipulador no Rviz
-        #hello_str.header.stamp = rospy.Time.now()
-        #hello_str.position = [q[0,0],q[1,0],q[2,0],q[3,0],q[4,0],q[5,0],q[6,0],0,0]
-        #pub.publish(hello_str)
-        #rate.sleep()        
+        hello_str.header.stamp = rospy.Time.now()
+        hello_str.position = [q[0,0],q[1,0],q[2,0],q[3,0],q[4,0],q[5,0],q[6,0],0,0]
+        pub.publish(hello_str)
+        rate.sleep()        
         
         #Calcula a distancia entre o efetuador a o objetivo(Posição)
         erro = distancia(p_0,destino,3)
