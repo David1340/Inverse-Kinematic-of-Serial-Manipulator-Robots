@@ -180,6 +180,69 @@ def Cinematica_Direta(q):
                     ,p5_0[0:3,0],p6_0[0:3,0],p7_0[0:3,0],p8_0[0:3,0]]).T
     return pontos
 
+#Gera uma pose alcançável 
+def random_pose(): 
+    #valor maximo que a junta pode assumir
+    qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889]   
+    #angulos de juntas iniciais
+    q = np.zeros([7,1])
+    for a in range(np.size(q)):
+        q[a] = random.uniform(-qlim[a],qlim[a])
+
+    #Parâmetros Físicos do manipulador [m]
+    base = 0.05 #5 cm
+    L = 0.075 #distância da ultima junta a extremidade do efetuador
+
+    #parametros de DH constantes
+    d1 = 0.075 + base
+    d2 = 0
+    d3 = 0.15
+    d4 = 0 
+    d5 = 0.145
+    d6 = 0
+    d7 = 0
+    a1 = 0
+    a2 = 0
+    a3 = 0
+    a4 = 0
+    a5 = 0
+    a6 = 0.075
+    a7 = 0
+    alpha1 = pi/2
+    alpha2 = -pi/2
+    alpha3 = pi/2
+    alpha4 = -pi/2
+    alpha5 = pi/2
+    alpha6 = pi/2
+    alpha7 = pi/2
+    # parametros de DH variáveis
+    theta1 = pi/2 + q[0]
+    theta2 = q[1]
+    theta3 = q[2]
+    theta4 = q[3]
+    theta5 = q[4]
+    theta6 = pi/2 + q[5]
+    theta7 = pi/2 + q[6]
+    #Matrizes homogêneas
+    A1 = matriz_homogenea(d1,a1,alpha1,theta1)
+    A2 = matriz_homogenea(d2,a2,alpha2,theta2)
+    A3 = matriz_homogenea(d3,a3,alpha3,theta3)
+    A4 = matriz_homogenea(d4,a4,alpha4,theta4)
+    A5 = matriz_homogenea(d5,a5,alpha5,theta5)
+    A6 = matriz_homogenea(d6,a6,alpha6,theta6)
+    A7 = matriz_homogenea(d7,a7,alpha7,theta7)
+    #Calculando os pontos de interesse no sistema Global
+    T1 = A1
+    T2 = T1@A2
+    T3 = T2@A3
+    T4 = T3@A4
+    T5 = T4@A5
+    T6 = T5@A6
+    T7 = T6@A7
+    p_7 = np.array([[0,0,L,1]]).T
+    p_0 = T7@p_7
+    return p_0[0:3] , T7[0:3,0:3]
+
 #configurando o Rviz
 pub = rospy.Publisher('joint_states', JointState, queue_size=10)
 rospy.init_node('joint_state_publisher')
@@ -193,9 +256,8 @@ hello_str.position  = [0,0,0,0,0,0,0,0,0]
 hello_str.velocity = []
 hello_str.effort = []
 
-#destino = np.array([[0.2,0.5,0.6]]).T
-destino = np.array([[0.5*random.random(),0.5*random.random(),0.6*random.random()]]).T
-print(np.round(destino,4))
+[posicaod,orientd] = random_pose()
+print(np.round(posicaod,4))
 q = np.array([[0.0,0.0,0.0,0.0,0.0,0.0,0.0]]).T
 n = 7 #número de juntas
 
@@ -257,21 +319,14 @@ for k in range(25):
     T7 = T6@A7
 
     #vetores de atuação das juntas
-    v1 = vetor(T1[0:3,1])
-    v2 = vetor(T2[0:3,1])
-    v3 = vetor(T3[0:3,1])
-    v4 = vetor(T4[0:3,1])
-    v5 = vetor(T5[0:3,1])
-    v6 = vetor(T6[0:3,1])
-    v7 = vetor(T7[0:3,1]) 
     Vy = np.array([T1[0:3,1],T2[0:3,1],T3[0:3,1],T4[0:3,1],T5[0:3,1],T6[0:3,1],T7[0:3,1]]).T
 
     pontos = Cinematica_Direta(q) 
-    erro = distancia(pontos[:,7],destino,3) 
+    erro = distancia(pontos[:,7],posicaod,3) 
 
     for i in range(n-1,-1,-1):
         pontos = Cinematica_Direta(q) 
-        proj = projecao_ponto_plano(vetor(Vy[:,i]),pontos[:,i],destino[:])
+        proj = projecao_ponto_plano(vetor(Vy[:,i]),pontos[:,i],posicaod[:])
         va = proj - vetor(pontos[:,i])
         va = va/norm(va)
         proj = projecao_ponto_plano(vetor(Vy[:,i]),pontos[:,i],vetor(pontos[:,7]))
@@ -289,13 +344,13 @@ for k in range(25):
 
         pontos = Cinematica_Direta(q)
         erro_anterior = erro
-        erro = distancia(pontos[:,7],destino,3) 
+        erro = distancia(pontos[:,7],posicaod,3) 
         if(erro_anterior < erro):
             print('Deu ruim',j)
             break
 
     pontos = Cinematica_Direta(q)
-    erro = distancia(pontos[:,7],destino,3) 
+    erro = distancia(pontos[:,7],posicaod,3) 
 
     if(erro < 10**-5):
         print(erro,'\n','fim da interacao:',k,'\n')

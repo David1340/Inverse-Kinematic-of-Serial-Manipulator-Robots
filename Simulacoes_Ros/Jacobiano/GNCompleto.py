@@ -67,7 +67,68 @@ def orientacao(A):
     result = np.array([[R,P,Y]]).T
     return result
 
+#Gera uma pose alcançável 
+def random_pose(): 
+    #valor maximo que a junta pode assumir
+    qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889]   
+    #angulos de juntas iniciais
+    q = np.zeros([7,1])
+    for a in range(np.size(q)):
+        q[a] = random.uniform(-qlim[a],qlim[a])
 
+    #Parâmetros Físicos do manipulador [m]
+    base = 0.05 #5 cm
+    L = 0.075 #distância da ultima junta a extremidade do efetuador
+
+    #parametros de DH constantes
+    d1 = 0.075 + base
+    d2 = 0
+    d3 = 0.15
+    d4 = 0 
+    d5 = 0.145
+    d6 = 0
+    d7 = 0
+    a1 = 0
+    a2 = 0
+    a3 = 0
+    a4 = 0
+    a5 = 0
+    a6 = 0.075
+    a7 = 0
+    alpha1 = pi/2
+    alpha2 = -pi/2
+    alpha3 = pi/2
+    alpha4 = -pi/2
+    alpha5 = pi/2
+    alpha6 = pi/2
+    alpha7 = pi/2
+    # parametros de DH variáveis
+    theta1 = pi/2 + q[0]
+    theta2 = q[1]
+    theta3 = q[2]
+    theta4 = q[3]
+    theta5 = q[4]
+    theta6 = pi/2 + q[5]
+    theta7 = pi/2 + q[6]
+    #Matrizes homogêneas
+    A1 = matriz_homogenea(d1,a1,alpha1,theta1)
+    A2 = matriz_homogenea(d2,a2,alpha2,theta2)
+    A3 = matriz_homogenea(d3,a3,alpha3,theta3)
+    A4 = matriz_homogenea(d4,a4,alpha4,theta4)
+    A5 = matriz_homogenea(d5,a5,alpha5,theta5)
+    A6 = matriz_homogenea(d6,a6,alpha6,theta6)
+    A7 = matriz_homogenea(d7,a7,alpha7,theta7)
+    #Calculando os pontos de interesse no sistema Global
+    T1 = A1
+    T2 = T1@A2
+    T3 = T2@A3
+    T4 = T3@A4
+    T5 = T4@A5
+    T6 = T5@A6
+    T7 = T6@A7
+    p_7 = np.array([[0,0,L,1]]).T
+    p_0 = T7@p_7
+    return p_0[0:3] , T7[0:3,0:3]
 
 #configurando o Rviz
 pub = rospy.Publisher('joint_states', JointState, queue_size=10)
@@ -93,10 +154,11 @@ qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889]
 
 #Objetivos
 #posição desejada
-pos_d = np.array([[0.2,0.2,0.3]]).T 
+#posicaod = np.array([[0.2,0.2,0.3]]).T 
 #Orientação desejada (RPY)
-RPY_d = np.array([0,pi/2,0])
-orient_d = matriz_RPY(RPY_d)
+#RPY_d = np.array([0,pi/2,0])
+#orientd = matriz_RPY(RPY_d)
+[posicaod,orientd] = random_pose()
 
 #vetores colunas do sistema de coordenadas global
 k = np.array([[0,0,1,1]]).T
@@ -188,7 +250,7 @@ while not rospy.is_shutdown():
         rate.sleep()        
 
         #Condição de parada   
-        erro =  distancia(p_0,pos_d,3)   
+        erro =  distancia(p_0,posicaod,3)   
         if(erro < 0.001):
             print('Solucao q: \n',q,'\nNumero de iteracoes:',cont)
             break      
@@ -223,11 +285,11 @@ while not rospy.is_shutdown():
        
         #Calculo da erro
         f = np.zeros([6,1])
-        f[0:3] = pos_d - p_0[0:3]
+        f[0:3] = posicaod - p_0[0:3]
         #a parte angular peguei do artigo A closed-loop inverse kinematic scheme
         #online joint based robot control
-        f[3:6] = 0.5*(S(T7[0:3,0:1])@orient_d[:,0:1]+ S(T7[0:3,1:2])@orient_d[:,1:2]  + \
-            S(T7[0:3,2:3])@orient_d[:,2:3])
+        f[3:6] = 0.5*(S(T7[0:3,0:1])@orientd[:,0:1]+ S(T7[0:3,1:2])@orientd[:,1:2]  + \
+            S(T7[0:3,2:3])@orientd[:,2:3])
         
         #Equação da Pseudo Inversa a Direita
         dq = alfa*((J.T@np.linalg.inv(J@J.T))@f) 
