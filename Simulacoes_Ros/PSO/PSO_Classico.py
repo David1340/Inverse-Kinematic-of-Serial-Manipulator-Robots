@@ -200,8 +200,7 @@ numero_particulas = 200
 dimensao = 7 #dimensão do robô
 
 #restrições de cada ângulo
-c = pi/12 
-L = [(pi)-c,pi/2,(pi)-c,(pi)-c,(pi)-c,(pi)-c,(pi)-c]
+L = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889]
 while not rospy.is_shutdown():
     solucao = PSO(objetivo,objetivo2,numero_particulas,dimensao,L)
     print('Solução q = ', solucao)
