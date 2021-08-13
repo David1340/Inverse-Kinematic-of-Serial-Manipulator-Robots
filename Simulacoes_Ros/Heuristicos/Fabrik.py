@@ -113,10 +113,10 @@ x  = vetor([1,0,0])
 y  = vetor([0,1,0])
 z  = vetor([0,0,1])
 
-destino = vetor([0.5*random.random(),0.5*random.random(),0.5*random.random()])
-print('destino:',destino[:,0])
+destino = vetor([0.2*random.random(),0.2*random.random(),0.4*random.random()])
+print('destino:',np.round(destino[:,0],4))
 dif_angular = [0,0,0,0,0,pi/2,0] #diferenca angular em relacao a junta anterior
-b = np.array([0.1,0.2,0.1,0.2,0.1,0.2,0.2]) #tamanho dos elos
+b = np.array([0.05,0.075,0.075,0.0725,0.0725,0.075,0.075]) #tamanho dos elos
 D = np.zeros([3,n]) #Vetores de atuação iniciais de cada junta
 for cont in range(n):
     if(direcoes[cont] == 1): #Se z
@@ -129,7 +129,7 @@ for cont in range(n):
 px = np.zeros([1,8]) 
 py = np.zeros([1,8])
 #pz = 5*np.array([[0,2,3,5,6,8,9,11]])
-pz = np.array([[0.2,0.3,0.5,0.6,0.8,0.9,1.1,1.3]])
+pz = np.array([[0.075,0.125,0.2,0.275,0.3475,0.42,0.495,0.57]])
 p = np.zeros([3,n+1]) #posicao inicial das juntas
 p[0,:] = px
 p[1,:] = py
