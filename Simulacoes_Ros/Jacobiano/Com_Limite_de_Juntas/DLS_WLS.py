@@ -229,7 +229,7 @@ while not rospy.is_shutdown():
         if(erro < 0.001):
             print('Solucao q: \n',q,'\nNumero de iteracoes:',v)
             break  
-
+        #teste
         #os vetores z serao transformados em vetores  no R^3
         z0_0 = k[0:3]
         z1_0 = (T1@k)[0:3]
