@@ -150,7 +150,7 @@ qmax = 0.1
 #Constante alpha para melhorar  a aproximação
 alfa = 0.1
 #Constante de amortecimento
-lbd = 0.05
+lbd = 0.005
 I = np.eye(6)
 
 #valor maximo que a junta pode assumir
