@@ -168,8 +168,6 @@ alpha5 = pi/2
 alpha6 = pi/2
 alpha7 = pi/2
 
-w_atual = np.zeros([7,1])
-w_anterior = w_atual
 while not rospy.is_shutdown():
     for v in range(1000):
         
@@ -255,29 +253,17 @@ while not rospy.is_shutdown():
 
         #erro
         f = posicaod - p_0[0:3]
-        #Jp = (J.T@np.linalg.inv(J@J.T + lbd*I)) #pseudo inversa á direita
-    
+
+        #Matriz de pesos
         W = np.zeros([7,7])
 
         for i2 in range(7):
             num = ((thmax[i2] - thmin[i2])**2)*(2*q[i2] - thmax[i2]-thmin[i2]) #numerador
-            den = 4*((thmax[i2]  - q[i2])**2)*((q[i2]-thmin[i2])**2)
-            if(v >= 2):
-                w_anterior[i2] = w_atual[i2]
-            w_atual[i2] = np.abs(num/den)
-            if(v >= 2):
-                if(w_atual[i2] >= w_anterior[i2]):                  
-                    W[i2,i2] = 1 + np.abs(num/den)
-                else:
-                    W[i2,i2] = 1
-            else: 
-                W[i2,i2] = 1 + np.abs(num/den)
-        
+            den = 4*((thmax[i2]  - q[i2])**2)*((q[i2]-thmin[i2])**2) #denominador
+            W[i2,i2] = 1 + np.abs(num/den)
 
-        #Equação do DLS
-        #dq =  alfa*Jp@f
+        #Equação do DLS com WLS
         Wi = np.linalg.inv(W)
-
         dq = alfa*Wi@J.T@np.linalg.inv(J@Wi@J.T + lbd*I)@f
    
         #limitando o delta q
@@ -290,15 +276,12 @@ while not rospy.is_shutdown():
         #Atualizando a configuração do robô
         q = q + dq
 
+        #limitando os limites das juntas, (nos meus testes nunca precisou)
         for i2 in range(np.size(q)):
             if(q[i2] > qlim[i2]):
                 q[i2] = qlim[i2] - 0.001
-                print('passou ',v)
             elif(q[i2] < -qlim[i2]):
                 q[i2] = -qlim[i2] + 0.001
-                print('passou ', v)
-                
-
     break    
 print('\n',p_0)
 
