@@ -6,7 +6,6 @@
 #dada uma posição (x,y,z) e uma orientação (angulos de euler)
 #no espaço para o Pioneer 7DOF
 
-
 from math import cos, sin, sqrt, pi, atan2
 import numpy as np
 import random 
@@ -157,12 +156,8 @@ I = np.eye(6)
 qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889] 
 
 #Objetivos
-#posição desejada
-#posicaod = np.array([[0.2,0.2,0.3]]).T 
-#Orientação desejada (RPY)
-#RPY_d = np.array([0,pi/2,0])
-#orientd = matriz_RPY(RPY_d)
 [posicaod,orientd] = random_pose()
+rpyd = orientacao(orientd)
 
 #vetores colunas do sistema de coordenadas global
 k = np.array([[0,0,1,1]]).T
@@ -254,6 +249,12 @@ while not rospy.is_shutdown():
         rate.sleep()        
 
         #Condição de parada   
+        errop =  distancia(p_0,posicaod,3) #erro de posiçao
+        rpy = orientacao(T7[0:3,0:3]) #angulos Roll, Pitch Yall
+        erroa = distancia(rpy,rpyd,3) #erro angular
+        c1 = 0.9
+        c2 = 0.1
+        erro = c1*errop + c2*erroa #composição de erro
         erro =  distancia(p_0,posicaod,3)   
         if(erro < 0.001):
             print('Solucao q: \n',q,'\nNumero de iteracoes:',cont)
@@ -314,10 +315,10 @@ while not rospy.is_shutdown():
                 q[i2] = qlim[i2]
             elif(q[i2] < -qlim[i2]):
                 q[i2] = -qlim[i2]
-        
-
     break   
 print(erro) 
-print(q)
-print(np.round(T7[0:3,0:3],2))
+print(np.round(p_0,3))
+print(np.round(posicaod,3))
+print(np.round(rpy,2))
+print(np.round(rpyd,2))
 # %%

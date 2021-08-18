@@ -159,7 +159,7 @@ thmax = np.array(qlim)
 thmin = -thmax
 #Objetivos
 [posicaod,orientd] = random_pose()
-
+rpyd = orientacao(orientd)
 #vetores colunas do sistema de coordenadas global
 k = np.array([[0,0,1,1]]).T
 o = np.array([[0,0,0,1]]).T #origem
@@ -250,7 +250,13 @@ while not rospy.is_shutdown():
         #rate.sleep()        
 
         #Condição de parada   
-        erro =  distancia(p_0,posicaod,3)   
+        errop =  distancia(p_0,posicaod,3) #erro de posiçao
+        rpy = orientacao(T7[0:3,0:3]) #angulos Roll, Pitch Yall
+        erroa = distancia(rpy,rpyd,3) #erro angular
+        c1 = 0.9
+        c2 = 0.1
+        erro = c1*errop + c2*erroa #composição de erro
+        erro =  distancia(p_0,posicaod,3)     
         if(erro < 0.001):
             print('Solucao q: \n',q,'\nNumero de iteracoes:',cont)
             break      

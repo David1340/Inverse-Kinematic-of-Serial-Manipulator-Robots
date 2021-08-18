@@ -191,8 +191,8 @@ class particle:
         self.d = distancia(p.T,o,3)
 
         #Calculo da função de custo       
-        k1 = 0.2 #orientação
-        k2 = 0.8 #posição
+        k1 = 0.1 #orientação
+        k2 = 0.9 #posição
         self.f = (k1*self.o) + (k2*self.d)
         if(self.f < self.bf):
             self.bf = self.f
@@ -236,10 +236,9 @@ def PSO(o,o2,number,n,L):
         #Critério de parada
         if(f <= 0.001):
             print("Solução: ",qbest,"em ",j + 1, "interações.\n\n")
-            print(f)
-            break;        
+            break;            
     
-    print(f)
+    #print(f)
     return qbest
 
 #Main
