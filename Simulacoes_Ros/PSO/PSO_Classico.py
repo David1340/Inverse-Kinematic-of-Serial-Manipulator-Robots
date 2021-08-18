@@ -3,104 +3,21 @@
 #Membro do Grupo de Pesquisa em Robotica da UFS-GPRUFS
 #Implementação do Particle Swarm Optimizarion
 #para encontrar encontrar uma configuração q
-#dada uma posição (x,y,z) e uma orientação 
+#dada uma posição (x,y,z) e uma orientacao 
 #no espaço para o Pioneer 7DOF
 
+#Import do modulo funcoes.py
+import sys
+sys.path.append('/home/david/Pibic2021/Inverse-Kinematic-of-Serial-Manipulator-Robots/Simulacoes_Ros')
+from funcoes import random_pose, matriz_homogenea, distancia, orientacao
+
+#Import das bibliotecas python
 from random import random,uniform
-from math import pi,cos,sin,sqrt,atan2
+from math import pi
 import numpy as np
 import rospy
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header
-
-def matriz_homogenea(d,a,alfa,theta):
-    #retorna a matriz homogênea a partir do parâmetros de DH
-    L1 = np.array([cos(theta), -sin(theta)*cos(alfa),\
-                sin(theta)*sin(alfa),a*cos(theta)])
-    L2 = np.array([sin(theta), cos(theta)*cos(alfa),\
-                -cos(theta)*sin(alfa),a*sin(theta)])
-    L3 = np.array([0,sin(alfa), cos(alfa), d])
-    L4 = np.array([0,0,0,1])
-    A = np.array([L1,L2,L3,L4])
-    return A
-
-def distancia(a,b,n):
-    #calcula a distância euclidiana entre dois pontos no R^n
-    d = 0
-    for i in range(n):
-        d = d + (a[i] - b[i])**2      
-    return sqrt(d)
-
-def orientação(A):
-    #calcular os ângulos de orientação na conversão Z -> Y -> X
-    R = atan2(A[1,0],A[0,0]) #Roll
-    P = atan2(-A[2,0],sqrt((A[2,1]**2)+(A[2,2]**2))) #Pitch
-    Y = atan2(A[2,1],A[2,2]) #Yaw
-    result = np.array([R,P,Y])
-    return result
-
-#Gera uma pose alcançável 
-def random_pose(): 
-    #valor maximo que a junta pode assumir
-    qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889]   
-    #angulos de juntas iniciais
-    q = np.zeros([7,1])
-    for a in range(np.size(q)):
-        q[a] = uniform(-qlim[a],qlim[a])
-
-    #Parâmetros Físicos do manipulador [m]
-    base = 0.05 #5 cm
-    L = 0.075 #distância da ultima junta a extremidade do efetuador
-
-    #parametros de DH constantes
-    d1 = 0.075 + base
-    d2 = 0
-    d3 = 0.15
-    d4 = 0 
-    d5 = 0.145
-    d6 = 0
-    d7 = 0
-    a1 = 0
-    a2 = 0
-    a3 = 0
-    a4 = 0
-    a5 = 0
-    a6 = 0.075
-    a7 = 0
-    alpha1 = pi/2
-    alpha2 = -pi/2
-    alpha3 = pi/2
-    alpha4 = -pi/2
-    alpha5 = pi/2
-    alpha6 = pi/2
-    alpha7 = pi/2
-    # parametros de DH variáveis
-    theta1 = pi/2 + q[0]
-    theta2 = q[1]
-    theta3 = q[2]
-    theta4 = q[3]
-    theta5 = q[4]
-    theta6 = pi/2 + q[5]
-    theta7 = pi/2 + q[6]
-    #Matrizes homogêneas
-    A1 = matriz_homogenea(d1,a1,alpha1,theta1)
-    A2 = matriz_homogenea(d2,a2,alpha2,theta2)
-    A3 = matriz_homogenea(d3,a3,alpha3,theta3)
-    A4 = matriz_homogenea(d4,a4,alpha4,theta4)
-    A5 = matriz_homogenea(d5,a5,alpha5,theta5)
-    A6 = matriz_homogenea(d6,a6,alpha6,theta6)
-    A7 = matriz_homogenea(d7,a7,alpha7,theta7)
-    #Calculando os pontos de interesse no sistema Global
-    T1 = A1
-    T2 = T1@A2
-    T3 = T2@A3
-    T4 = T3@A4
-    T5 = T4@A5
-    T6 = T5@A6
-    T7 = T6@A7
-    p_7 = np.array([[0,0,L,1]]).T
-    p_0 = T7@p_7
-    return p_0[0:3] , T7[0:3,0:3]
 
 class particle:
     def __init__(self,position,dimension):
@@ -109,7 +26,7 @@ class particle:
         self.bp = position.copy() #melhor posição que a particula ja esteve
         self.n = dimension #dimensão da particula
         self.d = 0 #Diferença em módulo da distância atual para a desejada
-        self.o = np.array([0,0,0]) #Diferença em módulo da orientação atual para a desejada
+        self.o = np.array([0,0,0]) #Diferença em módulo da orientacao atual para a desejada
         self.f = 500 #Função de custo/fitnees atual da particula
         self.bf = self.f #Melhor valor de função de custo da obtida pela particula
 
@@ -133,7 +50,7 @@ class particle:
        
             
     def update_fuction(self,o,o2): #Calcula a função de custo/fitness da particula
-        #(posição,orientação) da pose desejada
+        #(posição,orientacao) da pose desejada
         #Parâmetros Físicos do manipulador [m]
         base = 0.05 #5 cm
         L = 0.075 #distância da ultima junta a extremidade do efetuador
@@ -184,14 +101,14 @@ class particle:
         #posição do efetuador em relação ao sistema de coordenadas global
         p = A@p
 
-        #calculo do erro em módulo da orientação desejada e da particula
-        self.o = distancia(orientação(A),o2,3)
+        #calculo do erro em módulo da orientacao desejada e da particula
+        self.o = distancia(orientacao(A),o2,3)
 
         #calculo da distancia euclidiana da posição do efetuador em relação ao objetivo
         self.d = distancia(p.T,o,3)
 
         #Calculo da função de custo       
-        k1 = 0.1 #orientação
+        k1 = 0.1 #orientacao
         k2 = 0.9 #posição
         self.f = (k1*self.o) + (k2*self.d)
         if(self.f < self.bf):
@@ -238,7 +155,7 @@ def PSO(o,o2,number,n,L):
             print("Solução: ",qbest,"em ",j + 1, "interações.\n\n")
             break;            
     
-    #print(f)
+    print(f)
     return qbest
 
 #Main
@@ -257,7 +174,7 @@ hello_str.effort = []
 
 #objetivo
 [posicaod,orientd] = random_pose()
-orientd = orientação(orientd)
+orientd = orientacao(orientd)
 numero_particulas = 200
 dimensao = 7 #dimensão do robô
 
