@@ -125,11 +125,11 @@ def Cinematica_Direta(q):
     #Pontos de interesse
     L = 0.075 #distância da ultima junta a extremidade do efetuador
     p = np.array([[0,0,0,1]]).T #Base
-    p1_1 = np.array([[0,-0.075,0,1]]).T #junta1
+    p1_1 = np.array([[0,-0.05,0,1]]).T #junta1
     p2_2 = p #junta2
-    p3_3 = np.array([[0,-0.0725,0,1]]).T #junta3
+    p3_3 = np.array([[0,-0.075,0,1]]).T #junta3
     p4_4 = p #junta4
-    p5_5 = np.array([[0,-0.075,0,1]]).T #junta5
+    p5_5 = np.array([[0,-0.0725,0,1]]).T #junta5
     p6_6 = np.array([[-0.075,0,0,1]]).T #junta6
     p7_7 = p #junta7
     p8_7 = np.array([[0,0,L,1]]).T #contato de atuação do efetuador
@@ -195,3 +195,38 @@ def Cinematica_Direta(q):
     pontos = np.array([p1_0[0:3,0],p2_0[0:3,0],p3_0[0:3,0],p4_0[0:3,0]\
                     ,p5_0[0:3,0],p6_0[0:3,0],p7_0[0:3,0],p8_0[0:3,0]]).T
     return pontos
+
+#Projeta um ponto em um plano
+def projecao_ponto_plano(normal,p0,p):
+    #normal -> vetor normal ao plano
+    #p0 -> ponto pertecente ao plano
+    #p -> ponto a ser projetado
+    #constante d da equação do plano
+    d = -normal.T@p0 #produto escala 
+    #distancia do ponto ao plano
+    alpha = (-d - normal.T@p)/(normal[0,0]**2 +  normal[1,0]**2 + normal[2,0]**2)
+    ponto_projetado = p + alpha*normal
+    return ponto_projetado
+
+#realiza a operação de multiplicação de quaternios
+def multiplicacao_quaternios(q,q2):  
+    resultado = np.zeros([4,1])
+    resultado[0,0] = q[0,0]*q2[0,0] -q[1,0]*q2[1,0] -q[2,0]*q2[2,0] -q[3,0]*q2[3,0] 
+    resultado[1,0] = q[0,0]*q2[1,0] +q[1,0]*q2[0,0] +q[2,0]*q2[3,0] -q[3,0]*q2[2,0] 
+    resultado[2,0] = q[0,0]*q2[2,0] -q[1,0]*q2[3,0] +q[2,0]*q2[0,0] +q[3,0]*q2[1,0] 
+    resultado[3,0] = q[0,0]*q2[3,0] +q[1,0]*q2[2,0] -q[2,0]*q2[1,0] +q[3,0]*q2[0,0] 
+    return resultado
+
+#gira p em torno de v em th rad
+def rotationar_vetor(p,v,th):
+    a = cos(th/2)
+    b = v[0,0]*sin(th/2)
+    c = v[1,0]*sin(th/2)
+    d = v[2,0]*sin(th/2)
+    p_aumentado = np.zeros([4,1])
+    p_aumentado[1:4,0] = p[:,0]
+    h = np.array([[a,b,c,d]]).T
+    hx = np.array([[a,-b,-c,-d]]).T
+    p_r = multiplicacao_quaternios(h,p_aumentado)
+    q_r = multiplicacao_quaternios(p_r,hx)
+    return q_r[1:4]

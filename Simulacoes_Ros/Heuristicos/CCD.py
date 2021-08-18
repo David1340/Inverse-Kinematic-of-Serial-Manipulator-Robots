@@ -8,37 +8,14 @@
 import sys
 sys.path.append('/home/david/Pibic2021/Inverse-Kinematic-of-Serial-Manipulator-Robots/Simulacoes_Ros')
 from funcoes import matriz_homogenea, random_pose, distancia, Cinematica_Direta
+from funcoes import projecao_ponto_plano, rotationar_vetor
 
 #Import das bibliotecas python
-from math import cos, sin, sqrt, pi, acos
+from math import sqrt, pi, acos
 import numpy as np
-import random 
 import rospy
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header
-
-#realiza a operação de multiplicação de quaternios
-def multiplicacao_quaternios(q,q2):  
-    resultado = np.zeros([4,1])
-    resultado[0,0] = q[0,0]*q2[0,0] -q[1,0]*q2[1,0] -q[2,0]*q2[2,0] -q[3,0]*q2[3,0] 
-    resultado[1,0] = q[0,0]*q2[1,0] +q[1,0]*q2[0,0] +q[2,0]*q2[3,0] -q[3,0]*q2[2,0] 
-    resultado[2,0] = q[0,0]*q2[2,0] -q[1,0]*q2[3,0] +q[2,0]*q2[0,0] +q[3,0]*q2[1,0] 
-    resultado[3,0] = q[0,0]*q2[3,0] +q[1,0]*q2[2,0] -q[2,0]*q2[1,0] +q[3,0]*q2[0,0] 
-    return resultado
-
-#gira p em torno de v em th rad
-def rotationar_vetor(p,v,th):
-    a = cos(th/2)
-    b = v[0,0]*sin(th/2)
-    c = v[1,0]*sin(th/2)
-    d = v[2,0]*sin(th/2)
-    p_aumentado = np.zeros([4,1])
-    p_aumentado[1:4,0] = p[:,0]
-    h = np.array([[a,b,c,d]]).T
-    hx = np.array([[a,-b,-c,-d]]).T
-    p_r = multiplicacao_quaternios(h,p_aumentado)
-    q_r = multiplicacao_quaternios(p_r,hx)
-    return q_r[1:4]
 
 #Calcula o acos de um angulo arrendondado em 10 casas decimais
 def acosr(x):
@@ -51,18 +28,6 @@ def norm(v):
 #criar um vetor coluna a partir de uma lista
 def vetor(v):  
     return np.array([[v[0],v[1],v[2]]]).T
-
-#Projeta um ponto em um plano
-def projecao_ponto_plano(normal,p0,p):
-    #normal -> vetor normal ao plano
-    #p0 -> ponto pertecente ao plano
-    #p -> ponto a ser projetado
-    #constante d da equação do 
-    d = -normal.T@p0 #produto escala 
-    #distancia do ponto ao plano
-    alpha = (-d - normal.T@p)/(normal[0,0]**2 +  normal[1,0]**2 + normal[2,0]**2)
-    ponto_projetado = p + alpha*normal
-    return ponto_projetado
 
 #configurando o Rviz
 pub = rospy.Publisher('joint_states', JointState, queue_size=10)
@@ -78,7 +43,9 @@ hello_str.velocity = []
 hello_str.effort = []
 
 [posicaod,orientd] = random_pose()
-print(np.round(posicaod,4))
+print(np.round(posicaod,3))
+#valor maximo que a junta pode assumir
+qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889]  
 q = np.array([[0.0,0.0,0.0,0.0,0.0,0.0,0.0]]).T
 n = 7 #número de juntas
 
@@ -108,9 +75,8 @@ alpha4 = -pi/2
 alpha5 = pi/2
 alpha6 = pi/2
 alpha7 = pi/2
-
-
-
+convergiu = 0
+#print(Cinematica_Direta(np.array([[0,0,0,0,0,0,0]]).T))
 for k in range(25):
     # parametros de DH variáveis
     theta1 = pi/2 + q[0]
@@ -155,13 +121,18 @@ for k in range(25):
         vb = vb/norm(vb)
         th = acosr(va.T@vb)
         j = i + 1
-        if(j == 4 or j == 2):#Se for a junta 2 e 4
+        if(j == 4 or j == 2):#Se for a junta 2 ou 4
             v = rotationar_vetor(va,vetor(Vy[:,i]),pi/2)
         else:
             v = rotationar_vetor(va,vetor(Vy[:,i]),-pi/2) 
 
         if(vb.T@v < 0): th = -th
         q[i,0] = q[i,0] + th
+        
+        if(q[i] > qlim[i]):
+            q[i] = qlim[i]
+        elif(q[i] < -qlim[i]):
+            q[i] = -qlim[i]
 
         pontos = Cinematica_Direta(q)
         erro_anterior = erro
@@ -173,9 +144,14 @@ for k in range(25):
     pontos = Cinematica_Direta(q)
     erro = distancia(pontos[:,7],posicaod,3) 
 
-    if(erro < 10**-5):
+    if(erro < 0.001):
         print(erro,'\n','fim da interacao:',k,'\n')
+        convergiu = 1
         break
+
+if(convergiu == 0):
+    print('nao convergiu')
+    print(pontos[:,7])
 
 #atualiaza os angulos do manipulador no Rviz
 while not rospy.is_shutdown():
