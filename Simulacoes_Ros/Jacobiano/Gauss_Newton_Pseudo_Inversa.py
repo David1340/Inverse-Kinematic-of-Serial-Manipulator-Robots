@@ -3,102 +3,19 @@
 #Membro do Grupo de Pesquisa em Robotica da UFS-GPRUFS
 #Implementação do Método Gauss Newton/Pseudo Inversa  para encontrar uma configuação q 
 #dada uma posição (x,y,z) no espaço para o Pioneer 7DOF
-from math import cos, sin, sqrt, pi, atan2
+
+#Import do modulo funcoes.py
+import sys
+sys.path.append('/home/david/Pibic2021/Inverse-Kinematic-of-Serial-Manipulator-Robots/Simulacoes_Ros')
+from funcoes import random_pose, matriz_homogenea, distancia, S
+
+#Import das bibliotecas python
+from math import pi
 import numpy as np
 import random 
 import rospy
 from sensor_msgs.msg import JointState
 from std_msgs.msg import Header
-
-#Retorna a Matriz de transformacao Homogeneadados  usando como entrada os parametros de DH
-def matriz_homogenea(d,a,alfa,theta):
-    L1 = np.array([round(cos(theta),4), round(-sin(theta)*cos(alfa),4), round(sin(theta)*sin(alfa),4),round(a*cos(theta),4)])
-    L2 = np.array([round(sin(theta),4), round(cos(theta)*cos(alfa),4),round(-cos(theta)*sin(alfa),4),round(a*sin(theta),4)])
-    L3 = np.array([0, round(sin(alfa),4), round(cos(alfa),4), d])
-    L4 = np.array([0,0,0,1])
-    A = np.array([L1,L2,L3,L4])
-    return A
-
-def matriz_antissimetrica(a):
-    #A = [0,-az,ay ; az,0,-ax ; -ay,ax,0]
-    A = np.zeros((3,3))
-    A[0,1] = -a[2,0]
-    A[0,2] = a[1,0]
-    A[1,2] = -a[0,0]
-    A[1,0] = - A[0,1]
-    A[2,0] = - A[0,2]
-    A[2,1] = - A[1,2]
-    return A
-
-#Calcula a distancia Euclidiana entre dois pontos no R^n
-def distancia(a,b,n):
-    d = 0
-    for i in range(n):
-        d = d + (a[i] - b[i])**2      
-    return sqrt(d)
-
-#Gera uma pose alcançável 
-def random_pose(): 
-    #valor maximo que a junta pode assumir
-    qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889]   
-    #angulos de juntas iniciais
-    q = np.zeros([7,1])
-    for a in range(np.size(q)):
-        q[a] = random.uniform(-qlim[a],qlim[a])
-
-    #Parâmetros Físicos do manipulador [m]
-    base = 0.05 #5 cm
-    L = 0.075 #distância da ultima junta a extremidade do efetuador
-
-    #parametros de DH constantes
-    d1 = 0.075 + base
-    d2 = 0
-    d3 = 0.15
-    d4 = 0 
-    d5 = 0.145
-    d6 = 0
-    d7 = 0
-    a1 = 0
-    a2 = 0
-    a3 = 0
-    a4 = 0
-    a5 = 0
-    a6 = 0.075
-    a7 = 0
-    alpha1 = pi/2
-    alpha2 = -pi/2
-    alpha3 = pi/2
-    alpha4 = -pi/2
-    alpha5 = pi/2
-    alpha6 = pi/2
-    alpha7 = pi/2
-    # parametros de DH variáveis
-    theta1 = pi/2 + q[0]
-    theta2 = q[1]
-    theta3 = q[2]
-    theta4 = q[3]
-    theta5 = q[4]
-    theta6 = pi/2 + q[5]
-    theta7 = pi/2 + q[6]
-    #Matrizes homogêneas
-    A1 = matriz_homogenea(d1,a1,alpha1,theta1)
-    A2 = matriz_homogenea(d2,a2,alpha2,theta2)
-    A3 = matriz_homogenea(d3,a3,alpha3,theta3)
-    A4 = matriz_homogenea(d4,a4,alpha4,theta4)
-    A5 = matriz_homogenea(d5,a5,alpha5,theta5)
-    A6 = matriz_homogenea(d6,a6,alpha6,theta6)
-    A7 = matriz_homogenea(d7,a7,alpha7,theta7)
-    #Calculando os pontos de interesse no sistema Global
-    T1 = A1
-    T2 = T1@A2
-    T3 = T2@A3
-    T4 = T3@A4
-    T5 = T4@A5
-    T6 = T5@A6
-    T7 = T6@A7
-    p_7 = np.array([[0,0,L,1]]).T
-    p_0 = T7@p_7
-    return p_0[0:3] , T7[0:3,0:3]
 
 #configurando o Rviz
 pub = rospy.Publisher('joint_states', JointState, queue_size=10)
@@ -235,13 +152,13 @@ while not rospy.is_shutdown():
         #cálculo do Jacobiano geométrico
         J = np.zeros([3,7])
         #produto vetorial de Z0_0 por (o7_0 - o) 
-        J[:,0] = matriz_antissimetrica(z0_0)@(o7_0[0:3] - o[0:3])[:,0]
-        J[:,1] = matriz_antissimetrica(z1_0)@(o7_0[0:3] - o1_0[0:3])[:,0]
-        J[:,2] = matriz_antissimetrica(z2_0)@(o7_0[0:3] - o2_0[0:3])[:,0]
-        J[:,3] = matriz_antissimetrica(z3_0)@(o7_0[0:3] - o3_0[0:3])[:,0]
-        J[:,4] = matriz_antissimetrica(z4_0)@(o7_0[0:3] - o4_0[0:3])[:,0]
-        J[:,5] = matriz_antissimetrica(z5_0)@(o7_0[0:3] - o5_0[0:3])[:,0]
-        J[:,6] = matriz_antissimetrica(z6_0)@(o7_0[0:3] - o6_0[0:3])[:,0]
+        J[:,0] = S(z0_0)@(o7_0[0:3] - o[0:3])[:,0]
+        J[:,1] = S(z1_0)@(o7_0[0:3] - o1_0[0:3])[:,0]
+        J[:,2] = S(z2_0)@(o7_0[0:3] - o2_0[0:3])[:,0]
+        J[:,3] = S(z3_0)@(o7_0[0:3] - o3_0[0:3])[:,0]
+        J[:,4] = S(z4_0)@(o7_0[0:3] - o4_0[0:3])[:,0]
+        J[:,5] = S(z5_0)@(o7_0[0:3] - o5_0[0:3])[:,0]
+        J[:,6] = S(z6_0)@(o7_0[0:3] - o6_0[0:3])[:,0]
 
         #erro
         f = posicaod - p_0[0:3]
