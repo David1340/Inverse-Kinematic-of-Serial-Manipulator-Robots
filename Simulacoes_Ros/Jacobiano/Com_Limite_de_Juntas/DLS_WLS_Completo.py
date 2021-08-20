@@ -40,22 +40,23 @@ alfa = 0.1
 #Constante de amortecimento
 lbd = 0.005
 I = np.eye(6)
-
+K = 1000 #número máximo de iterações
 #valor maximo que a junta pode assumir
 qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889] 
 thmax = np.array(qlim)
 thmin = -thmax
+
 #Objetivos
 [posicaod,orientd] = random_pose()
 rpyd = orientacao(orientd)
 #vetores colunas do sistema de coordenadas global
-k = np.array([[0,0,1,1]]).T
+z = np.array([[0,0,1,1]]).T
 o = np.array([[0,0,0,1]]).T #origem
 
 #Inicialização dos angulos de juntas
 q = np.zeros([7,1])
-for a in range(np.size(q)):
-   q[a] = random.uniform(-qlim[a],qlim[a])
+for i in range(np.size(q)):
+   q[i] = random.uniform(-qlim[i],qlim[i])
 
 #Parâmetros Físicos do manipulador [m]
 base = 0.05 #5 cm
@@ -84,8 +85,9 @@ alpha5 = pi/2
 alpha6 = pi/2
 alpha7 = pi/2
 
-while not rospy.is_shutdown():
-    for cont in range(1000):
+#Trava o Rviz com as os valores de juntas enviados pelo código
+while not rospy.is_shutdown(): 
+    for k in range(K):
 
         # parametros de DH variáveis
         theta1 = pi/2 + q[0]
@@ -114,6 +116,7 @@ while not rospy.is_shutdown():
         o6_6 = o #origem do SC 6
         o7_7 = o #origem do SC 7
         p_7 = np.array([[0,0,L,1]]).T
+
         #Calculando os pontos de interesse no sistema Global
         T1 = A1
         T2 = T1@A2
@@ -131,33 +134,33 @@ while not rospy.is_shutdown():
         o7_0 = T7@o7_7
         p_0 = T7@p_7
 
-        #atualiaza os angulos do manipulador no Rviz
-        #hello_str.header.stamp = rospy.Time.now()
-        #hello_str.position = [q[0,0],q[1,0],q[2,0],q[3,0],q[4,0],q[5,0],q[6,0],0,0]
-        #pub.publish(hello_str)
-        #rate.sleep()        
+        #atualiza os angulos do manipulador no Rviz
+        hello_str.header.stamp = rospy.Time.now()
+        hello_str.position = [q[0,0],q[1,0],q[2,0],q[3,0],q[4,0],q[5,0],q[6,0],0,0]
+        pub.publish(hello_str)
+        rate.sleep()        
 
         #Condição de parada   
         errop =  distancia(p_0,posicaod,3) #erro de posiçao
         rpy = orientacao(T7[0:3,0:3]) #angulos Roll, Pitch Yall
         erroa = distancia(rpy,rpyd,3) #erro angular
-        c1 = 0.9
-        c2 = 0.1
-        erro = c1*errop + c2*erroa #composição de erro
+        c1 = 1 #posição
+        c2 = 0.1 #orientação
+        erro = c1*errop + c2*erroa #erro de pose
         erro =  distancia(p_0,posicaod,3)     
         if(erro < 0.001):
-            print('Solucao q: \n',q,'\nNumero de iteracoes:',cont)
+            print('Solucao q: \n',q,'\nNumero de iteracoes:',k)
             break      
 
         #os vetores z serao transformados em vetores  no R^3
-        z0_0 = k[0:3]
-        z1_0 = (T1@k)[0:3]
-        z2_0 = (T2@k)[0:3]
-        z3_0 = (T3@k)[0:3]
-        z4_0 = (T4@k)[0:3]
-        z5_0 = (T5@k)[0:3]
-        z6_0 = (T6@k)[0:3]
-        #z7_0 = (T7@k)[0:3] nao eh usado
+        z0_0 = z[0:3]
+        z1_0 = (T1@z)[0:3]
+        z2_0 = (T2@z)[0:3]
+        z3_0 = (T3@z)[0:3]
+        z4_0 = (T4@z)[0:3]
+        z5_0 = (T5@z)[0:3]
+        z6_0 = (T6@z)[0:3]
+        #z7_0 = (T7@z)[0:3] nao eh usado
 
         #cálculo do Jacobiano geometrico
         J = np.zeros([6,7])
@@ -189,39 +192,35 @@ while not rospy.is_shutdown():
         #Matriz de pesos
         W = np.zeros([7,7])
 
-        for i2 in range(7):
-            num = ((thmax[i2] - thmin[i2])**2)*(2*q[i2] - thmax[i2]-thmin[i2]) #numerador
-            den = 4*((thmax[i2]  - q[i2])**2)*((q[i2]-thmin[i2])**2) #denominador
-            W[i2,i2] = 1 + np.abs(num/den)
+        for i in range(7):
+            num = ((thmax[i] - thmin[i])**2)*(2*q[i] - thmax[i]-thmin[i]) #numerador
+            den = 4*((thmax[i]  - q[i])**2)*((q[i]-thmin[i])**2) #denominador
+            W[i,i] = 1 + np.abs(num/den)
 
         #Equação do DLS com WLS
         Wi = np.linalg.inv(W)
         dq = alfa*Wi@J.T@np.linalg.inv(J@Wi@J.T + lbd*I)@f
 
         #limitando o delta q
-        for i2 in range(np.size(dq)):
-            if(dq[i2] > qmax):
-                dq[i2] = qmax
-            elif(dq[i2] < -qmax):
-                dq[i2] = -qmax 
+        for i in range(np.size(dq)):
+            if(dq[i] > qmax):
+                dq[i] = qmax
+            elif(dq[i] < -qmax):
+                dq[i] = -qmax 
 
         #Atualizando a cofiguração
         q = q + dq
 
         #Limitando os valores das juntas
-        for i2 in range(np.size(q)):
-            if(q[i2] > qlim[i2]):
-                q[i2] = qlim[i2]
-                print('passou')
-            elif(q[i2] < -qlim[i2]):
-                q[i2] = -qlim[i2]
-                print('passou')
-        
-
-    break   
+        for i in range(np.size(q)):
+            if(q[i] > qlim[i]):
+                q[i] = qlim[i]
+            elif(q[i] < -qlim[i]):
+                q[i] = -qlim[i]
+                
+    break #Encerra a Simulação no Rviz 
 print(erro) 
-print(np.round(p_0,4))
-print(np.round(posicaod,4))
-print(np.round(T7[0:3,0:3],2))
-print(np.round(orientd,2))
-# %%
+print('posição desejada:\n',np.round(posicaod,3))
+print('posição alcançada:\n',np.round(p_0,3))
+print('orientação desejada:\n',np.round(rpyd,3))
+print('orientação alcançada:\n',np.round(rpy,3))

@@ -38,26 +38,20 @@ hello_str.effort = []
 qmax = 0.1 
 #Constante alpha para melhorar  a aproximação
 alfa = 0.1
-
+K = 1000 #número máximo de iterações
 #valor maximo que a junta pode assumir
 qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889] 
 
-#Objetivos
-#posição desejada
-#posicaod = np.array([[0.2,0.2,0.3]]).T 
-#Orientação desejada (RPY)
-#RPY_d = np.array([0,pi/2,0])
-#orientd = matriz_RPY(RPY_d)
 [posicaod,orientd] = random_pose()
 rpyd = orientacao(orientd)
 #vetores colunas do sistema de coordenadas global
-k = np.array([[0,0,1,1]]).T
+z = np.array([[0,0,1,1]]).T
 o = np.array([[0,0,0,1]]).T #origem
 
 #Inicialização dos angulos de juntas
 q = np.zeros([7,1])
-for a in range(np.size(q)):
-   q[a] = random.uniform(-qlim[a],qlim[a])
+for i in range(np.size(q)):
+   q[i] = random.uniform(-qlim[i],qlim[i])
 
 #Parâmetros Físicos do manipulador [m]
 base = 0.05 #5 cm
@@ -143,7 +137,7 @@ while not rospy.is_shutdown():
         errop =  distancia(p_0,posicaod,3) #erro de posiçao
         rpy = orientacao(T7[0:3,0:3]) #angulos Roll, Pitch Yall
         erroa = distancia(rpy,rpyd,3) #erro angular
-        c1 = 0.9
+        c1 = 1
         c2 = 0.1
         erro = c1*errop + c2*erroa #composição de erro
         erro =  distancia(p_0,posicaod,3)   
@@ -153,14 +147,14 @@ while not rospy.is_shutdown():
             break      
 
         #os vetores z serao transformados em vetores  no R^3
-        z0_0 = k[0:3]
-        z1_0 = (T1@k)[0:3]
-        z2_0 = (T2@k)[0:3]
-        z3_0 = (T3@k)[0:3]
-        z4_0 = (T4@k)[0:3]
-        z5_0 = (T5@k)[0:3]
-        z6_0 = (T6@k)[0:3]
-        #z7_0 = (T7@k)[0:3] nao eh usado
+        z0_0 = z[0:3]
+        z1_0 = (T1@z)[0:3]
+        z2_0 = (T2@z)[0:3]
+        z3_0 = (T3@z)[0:3]
+        z4_0 = (T4@z)[0:3]
+        z5_0 = (T5@z)[0:3]
+        z6_0 = (T6@z)[0:3]
+        #z7_0 = (T7@z)[0:3] nao eh usado
 
         #cálculo do Jacobiano geometrico
         J = np.zeros([6,7])
@@ -192,23 +186,25 @@ while not rospy.is_shutdown():
         dq = alfa*((J.T@np.linalg.inv(J@J.T))@f) 
 
         #limitando o delta q
-        for i2 in range(np.size(dq)):
-            if(dq[i2] > qmax):
-                dq[i2] = qmax
-            elif(dq[i2] < -qmax):
-                dq[i2] = -qmax 
+        for i in range(np.size(dq)):
+            if(dq[i] > qmax):
+                dq[i] = qmax
+            elif(dq[i] < -qmax):
+                dq[i] = -qmax 
 
         #Atualizando a cofiguração
         q = q + dq
 
         #Limitando os valores das juntas
-        for i2 in range(np.size(q)):
-            if(q[i2] > qlim[i2]):
-                q[i2] = qlim[i2]
-            elif(q[i2] < -qlim[i2]):
-                q[i2] = -qlim[i2]
+        for i in range(np.size(q)):
+            if(q[i] > qlim[i]):
+                q[i] = qlim[i]
+            elif(q[i] < -qlim[i]):
+                q[i] = -qlim[i]
     break   
 print(erro) 
-print(q)
-print(np.round(T7[0:3,0:3],2))
+print('posição desejada:\n',np.round(posicaod,3))
+print('posição alcançada:\n',np.round(p_0,3))
+print('orientação desejada:\n',np.round(rpyd,3))
+print('orientação alcançada:\n',np.round(rpy,3))
 # %%

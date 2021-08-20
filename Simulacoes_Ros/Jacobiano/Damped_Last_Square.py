@@ -33,11 +33,14 @@ hello_str.velocity = []
 hello_str.effort = []
 
 #variaveis do método
-cont = 0
-alfa = 0.1 #tamanho do passo
-lbd = 0.005 #lambda
+#Constante alpha para melhorar  a aproximação
+alfa = 0.1
+#Constante de amortecimento
+lbd = 0.005
 I = np.eye(3)
-qmax = 0.1 #passo maximo entre atualizacoes das juntas
+#passo maximo entre atualizacoes das juntas
+qmax = 0.1 
+K = 1000 #número máximo de iterações
 
 #valor maximo que a junta pode assumir
 qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889] 
@@ -46,13 +49,13 @@ qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889]
 [posicaod,orientd] = random_pose()
 
 #vetores colunas do sistema de coordenadas global
-k = np.array([[0,0,1,1]]).T
+z = np.array([[0,0,1,1]]).T
 o = np.array([[0,0,0,1]]).T #origem
 
 #angulos de juntas iniciais
 q = np.zeros([7,1])
-for a in range(np.size(q)):
-    q[a] = random.uniform(-qlim[a],qlim[a])
+for i in range(np.size(q)):
+    q[i] = random.uniform(-qlim[i],qlim[i])
 
 #Parâmetros Físicos do manipulador [m]
 base = 0.05 #5 cm
@@ -82,7 +85,7 @@ alpha6 = pi/2
 alpha7 = pi/2
 
 while not rospy.is_shutdown():
-    for v in range(1000):
+    for k in range(K):
         
         # parametros de DH variáveis
         theta1 = pi/2 + q[0]
@@ -140,18 +143,18 @@ while not rospy.is_shutdown():
 
         #Condição de parada
         if(erro < 0.001):
-            print('Solucao q: \n',q,'\nNumero de iteracoes:',v)
+            print('Solucao q: \n',q,'\nNumero de iteracoes:',k)
             break  
 
         #os vetores z serao transformados em vetores  no R^3
-        z0_0 = k[0:3]
-        z1_0 = (T1@k)[0:3]
-        z2_0 = (T2@k)[0:3]
-        z3_0 = (T3@k)[0:3]
-        z4_0 = (T4@k)[0:3]
-        z5_0 = (T5@k)[0:3]
-        z6_0 = (T6@k)[0:3]
-        #z7_0 = (T7@k)[0:3] nao eh usado
+        z0_0 = z[0:3]
+        z1_0 = (T1@z)[0:3]
+        z2_0 = (T2@z)[0:3]
+        z3_0 = (T3@z)[0:3]
+        z4_0 = (T4@z)[0:3]
+        z5_0 = (T5@z)[0:3]
+        z6_0 = (T6@z)[0:3]
+        #z7_0 = (T7@z)[0:3] nao eh usado
 
         #cálculo do Jacobiano geométrico
         J = np.zeros([3,7])
@@ -171,19 +174,21 @@ while not rospy.is_shutdown():
         dq =  alfa*((J.T@np.linalg.inv(J@J.T + lbd*I))@f)
                 
         #limitando o delta q
-        for i2 in range(np.size(dq)):
-            if(dq[i2] > qmax):
-                dq[i2] = qmax
-            elif(dq[i2] < -qmax):
-                dq[i2] = -qmax 
+        for i in range(np.size(dq)):
+            if(dq[i] > qmax):
+                dq[i] = qmax
+            elif(dq[i] < -qmax):
+                dq[i] = -qmax 
 
         #Atualizando a configuração do robô
         q = q + dq
 
-        for i2 in range(np.size(q)):
-            if(q[i2] > qlim[i2]):
-                q[i2] = qlim[i2]
-            elif(q[i2] < -qlim[i2]):
-                q[i2] = -qlim[i2]
+        for i in range(np.size(q)):
+            if(q[i] > qlim[i]):
+                q[i] = qlim[i]
+            elif(q[i] < -qlim[i]):
+                q[i] = -qlim[i]
     break    
-print('\n',p_0)
+print(erro) 
+print('posição desejada:\n',np.round(p_0,3))
+print('posição alcançada:\n',np.round(posicaod,3))
