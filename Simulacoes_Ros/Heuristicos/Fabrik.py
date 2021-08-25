@@ -3,6 +3,12 @@
 #Membro do Grupo de Pesquisa em Robotica da UFS-GPRUFS
 #Implementação do Forward And Backward Reaching Inverse Kinematic 
 #para encontrar uma configuação q dada uma posição (x,y,z) no espaço para o Pioneer 7DOF
+
+#Import do modulo funcoes.py
+import sys
+sys.path.append('/home/david/Pibic2021/Inverse-Kinematic-of-Serial-Manipulator-Robots/Simulacoes_Ros')
+from funcoes import Cinematica_Direta
+
 from math import cos, sin, sqrt, pi,acos
 import numpy as np
 import random 
@@ -40,6 +46,9 @@ def projecao_ponto_plano(normal,p0,p):
     #p0 -> ponto pertecente ao plano
     #p -> ponto a ser projetado
     #constante d da equação do 
+    if(np.round(norm(normal),10) > 1): 
+        normal = normal/norm(normal)
+        
     d = -normal.T@p0 #produto escala 
     #distancia do ponto ao plano
     alpha = (-d - normal.T@p)/(normal[0,0]**2 +  normal[1,0]**2 + normal[2,0]**2)
@@ -73,6 +82,7 @@ def multiplicacao_quaternios(q,q2):
 #gira p em torno de v em th rad
 def rotationar_vetor(p,v,th):
     a = cos(th/2)
+    v = v/norm(v)
     b = v[0,0]*sin(th/2)
     c = v[1,0]*sin(th/2)
     d = v[2,0]*sin(th/2)
@@ -183,8 +193,10 @@ x  = vetor([1,0,0])
 y  = vetor([0,1,0])
 z  = vetor([0,0,1])
 
-destino = vetor([0.2*random.random(),0.2*random.random(),0.4*random.random()])
-print('destino:',np.round(destino[:,0],4))
+posicaod, orientd = random_pose()
+destino = posicaod
+#destino = vetor([0.004,0.039,0.446])
+print('destino:',np.round(destino[:,0],3))
 dif_angular = [0,0,0,0,0,pi/2,0] #diferenca angular em relacao a junta anterior
 b = np.array([0.05,0.075,0.075,0.0725,0.0725,0.075,0.075]) #tamanho dos elos
 D = np.zeros([3,n]) #Vetores de atuação iniciais de cada junta
@@ -196,18 +208,24 @@ for cont in range(n):
     elif(direcoes[cont] == 3):#Se y
         D[:,cont] = y[:,0] 
 
-px = np.zeros([1,8]) 
-py = np.zeros([1,8])
-#pz = 5*np.array([[0,2,3,5,6,8,9,11]])
-pz = np.array([[0.075,0.125,0.2,0.275,0.3475,0.42,0.495,0.57]])
-p = np.zeros([3,n+1]) #posicao inicial das juntas
-p[0,:] = px
-p[1,:] = py
-p[2,:] = pz
+qlim = [2.6179,1.5358,2.6179,1.6144,2.6179,1.8413,1.7889]  
+#for i in range(np.size(q)):
+#    q[i] = random.uniform(-qlim[i],qlim[i])
+q = np.zeros([7,1])
+
+#px = np.zeros([1,8])  #gerando p manualmente
+#py = np.zeros([1,8])
+#pz = np.array([[0.075,0.125,0.2,0.275,0.3475,0.42,0.495,0.57]])
+#p = np.zeros([3,n+1]) #posicao inicial das juntas
+#p[0,:] = px
+#p[1,:] = py
+#p[2,:] = pz
+p = Cinematica_Direta(q)
 pcte = p[:,0].copy()
-pl = p
-Dl = D
+pl = p.copy()
+Dl = D.copy()
 erro = distancia(p[:,n],destino,3)
+print('erro inicial:', erro)
 K = 100 #número máximo de iterações
 k = 0
 erromin = 10**-3
@@ -221,12 +239,11 @@ while(erro > erromin and k < K):
             v1 = v1/norm(v1)
             v2 = vetor(p[:,i-1] - p[:,i])#p6 -> p5
             v2 = v2/norm(v2)
-            naux = (S(v1)@v2)#produto vetorial
-
-            if(norm(naux) > 0.1):
+            naux = (S(v1)@v2)#produto vetorial            
+            if(norm(naux) > 0.00001):
                 Dl[:,i] = naux[:,0]/norm(naux)
             else:
-                Dl[:,i] = D[:,i]
+                Dl[:,i] = D[:,i].copy()
 
             pl[:,i] = iteracao_Fabrik(p[:,i],pl[:,i+1],b[i],Dl[:,i])[:,0] 
 
@@ -235,10 +252,17 @@ while(erro > erromin and k < K):
             if(i == 1 or i == 3):#Se a junta prev for pivot (2 e 4)
                 pl[:,i] = pl[:,i+1] - Dl[:,i+1]*b[i]
                 paux = iteracao_Fabrik(p[:,i-1],pl[:,i],b[i],Dl[:,i+1])[:,0]
-                v1 = vetor(paux - pl[:,i])
-                v1 = v1/norm(v1)
+                v1 = vetor(paux - pl[:,i])                
+                v1 = v1/norm(v1) #vetor de refência
                 v2 = vetor(Dl[:,i+2])
+                v2 = v2/norm(v2)
                 th = np.real(acosr(v1.T@v2))
+
+                #v3 é um vetor ortogonal ao vetor de referência (v1)
+                v3 = rotationar_vetor(v1,vetor(Dl[:,i+1]),pi/2)[:,0]
+                if(v3.T@v2 < 0):
+                    th = -th
+
                 Dl[:,i] = rotationar_vetor(v2,vetor(Dl[:,i+1]),(pi/2) - th)[:,0] 
                 Dl[:,i] = Dl[:,i]/norm(D[:,i])
 
@@ -257,8 +281,8 @@ while(erro > erromin and k < K):
  
     Dl[:,0] = [0,0,1]
     pl[:,0] = pl[:,1] - b[0]*Dl[:,0] 
-    D = Dl
-    p = pl
+    D = Dl.copy()
+    p = pl.copy()
 
     #Backward
     for i in range(0,n):
@@ -268,9 +292,17 @@ while(erro > erromin and k < K):
                 paux = iteracao_Fabrik(p[:,i+1],pl[:,i],b[i],Dl[:,i-1])[:,0]
                 v1 = vetor(paux - pl[:,i])
                 v1 = v1/norm(v1)
-                if(i != 1): v2 = vetor(Dl[:,i-2])
+                if(i != 1): 
+                    v2 = vetor(Dl[:,i-2])
+                    v2 = v2/norm(v2)
                 else: v2 = np.array([[1,0,0]]).T
                 th = np.real(acosr(v1.T@v2))
+
+                #v3 é um vetor ortogonal ao vetor de referência (v1)
+                v3 = rotationar_vetor(v1,vetor(Dl[:,i-1]),pi/2)[:,0]
+                if(v3.T@v2 < 0):
+                    th = -th
+
                 Dl[:,i] = rotationar_vetor(v2,vetor(Dl[:,i-1]),(pi/2) - th)[:,0] 
                 Dl[:,i] = Dl[:,i]/norm(D[:,i])
 
@@ -288,11 +320,12 @@ while(erro > erromin and k < K):
             v1 = v1/norm(v1)
             Dl[:,i] = v1
         elif(i == 0): #Primeira junta eixo de atuação e posição são fixos
-            pl[:,0] = pcte #[0,0,0.2]
+            pl[:,0] = pcte #[0,0,0.075]
     pl[:,7]  = iteracao_Fabrik(p[:,7],pl[:,6],b[6],Dl[:,6])[:,0]
-    p = pl
-    D = Dl
+    p = pl.copy()
+    D = Dl.copy()
     erro = distancia(p[:,n],destino,3)
+    print('erro: ', erro)
     k = k +1
 
 
@@ -303,45 +336,43 @@ z  = vetor([0,0,1])
 q = np.zeros([7,1])
 #v é o vetor ortogonal ao vetor de refência para o cálculo dos ângulos 
 
-v = rotationar_vetor(x,vetor(D[:,0]),pi/2)
-q[0] = acosr(D[:,1].T@x)
-if(D[:,1].T@v < 0): q[0] = -q[0]
 
-v = rotationar_vetor(z,vetor(D[:,1]),pi/2)
-q[1] = acosr(D[:,2].T@z)
-if(D[:,2].T@v < 0): q[1] = -q[1]
+for i in range(7):
+    D[:,i] = D[:,i]/norm(D[:,i])
 
-v = rotationar_vetor(vetor(D[:,1]),vetor(D[:,2]),pi/2)
-q[2] = acosr(D[:,3].T@D[:,1])
-if(D[:,3].T@v < 0): q[2] = -q[2]
+for i in range(7):
 
-v = rotationar_vetor(vetor(D[:,2]),vetor(D[:,3]),pi/2)
-q[3] = acosr(D[:,4].T@D[:,2])
-if(D[:,4].T@v < 0): q[3] = -q[3]
+    if(i == 0):
+        vref = x
+    elif(i == 6):
+        vref = vetor(p[:,6] - p[:,5])
+        vref = vref/norm(vref)
+    else:
+        vref = vetor(D[:,i-1])
 
-v = rotationar_vetor(vetor(D[:,3]),vetor(D[:,4]),pi/2)
-q[4] = acosr(D[:,5].T@D[:,3])
-if(D[:,5].T@v < 0): q[4] = -q[4]
-
-v_aux = vetor(p[:,6] - p[:,5])
-v_aux = v_aux/norm(v_aux)
-v = rotationar_vetor(vetor(D[:,4]),vetor(D[:,5]),pi/2)
-q[5] = acosr(v_aux.T@D[:,4])
-if(v_aux.T@v < 0): q[5] = -q[5]
-
-v_aux = vetor(p[:,7] - p[:,6])
-v_aux = v_aux/norm(v_aux)
-v_aux2 = vetor(p[:,6] - p[:,5]) 
-v_aux2 = v_aux2/norm(v_aux2)
-v = rotationar_vetor(v_aux2,vetor(D[:,6]),pi/2)
-q[6] = acosr(v_aux.T@v_aux2)
-if(v_aux.T@v < 0): q[6] = -q[6]
+    #v é o vetor ortogonal ao vetor de refência para o cálculo dos ângulos 
+    v = rotationar_vetor(vref,vetor(D[:,i]),pi/2) 
+    
+    #cálculo o ângulo
+    if(i == 5):
+        vaux = vetor(p[:,6] - p[:,5])
+        vaux = vaux/norm(vaux)
+        q[5] = acosr(vaux.T@vref)
+        if(vaux.T@v < 0): q[5] = - q[5]
+    elif(i == 6):
+        vaux = vetor(p[:,7] - p[:,6])
+        vaux = vaux/norm(vaux)
+        q[6] = acosr(vaux.T@vref)
+        if(vaux.T@v < 0): q[6] = - q[6]
+    else:    
+        q[i] = acosr(D[:,i+1].T@vref)
+        if(D[:,i+1].T@v < 0): q[i] = - q[i]
 
 print('erro: ', erro)
 print('k: ',k)  
 print('q: ', q)
 
-#atualiaza os angulos do manipulador no Rviz
+#atualiza os angulos do manipulador no Rviz
 while not rospy.is_shutdown():
         
         hello_str.header.stamp = rospy.Time.now()
