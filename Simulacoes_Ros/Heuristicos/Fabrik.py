@@ -220,13 +220,13 @@ while(erro > erromin and k < K):
                 pl[:,i] = iteracao_Fabrik(p[:,i+1],pl[:,i-1],b[i-1],Dl[:,i-1])[:,0]
                 pl[:,i] = restringe_junta(pl[:,i],pl[0:3,i-1],pl[0:3,i-2],i-1)
                 paux = iteracao_Fabrik(p[:,i+1],pl[:,i],b[i],Dl[:,i-1])[:,0]
-                paux = restringe_junta(paux,pl[0:3,i],pl[0:3,i-1],i)
                 v1 = vetor(paux - pl[:,i])
                 v1 = v1/norm(v1)
                 Dl[:,i] = rotationar_vetor(vetor(Dl[:,i-1]),v1,pi/2)[:,0]
                 Dl[:,i] = Dl[:,i]/norm(D[:,i])
                 #efetuador
                 pl[:,7]  = iteracao_Fabrik(p[:,7],pl[:,6],b[6],Dl[:,6])[:,0] 
+                pl[:,7] = restringe_junta(pl[:,7],pl[0:3,6],pl[0:3,5],6) 
 
         elif(i == 2 or i == 4): #Se a junta for pivot (3 e 5)
             pl[:,i] = iteracao_Fabrik(p[:,i+1],pl[:,i-1],b[i-1],Dl[:,i-1])[:,0]
