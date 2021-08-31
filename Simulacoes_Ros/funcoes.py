@@ -297,7 +297,7 @@ def multiplicacao_quaternios(q,q2):
 #gira p em torno de v em th rad
 def rotationar_vetor(p,v,th):
     a = cos(th/2)
-    v = v/norm(v)
+    if(norm(v) > 0.0001): v = v/norm(v)
     b = v[0,0]*sin(th/2)
     c = v[1,0]*sin(th/2)
     d = v[2,0]*sin(th/2)
