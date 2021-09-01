@@ -204,7 +204,7 @@ while(erro > erromin and k < K):
                     v2 = vetor(Dl[:,i-2])
                 #Como a junta 2 é primeira pivot da cadeia
                 #eu uso como direção iniciao o vetor -i
-                else: v2 = np.array([[-1,0,0]]).T 
+                else: v2 = np.array([[1,0,0]]).T 
                 th = np.real(acosr(v1.T@v2))
 
                 #v3 é um vetor ortogonal ao vetor de referência (v1)
@@ -215,7 +215,7 @@ while(erro > erromin and k < K):
                 Dl[:,i] = rotationar_vetor(v2,vetor(Dl[:,i-1]),(pi/2) - th)[:,0] 
                 Dl[:,i] = Dl[:,i]/norm(D[:,i])
                 if(i != 1): Dl[:,i]  = restringe_junta2(vetor(Dl[:,i]),vetor(Dl[:,i-2]),i-1) #1-3-5
-                else: Dl[:,i]  = restringe_junta2(vetor(Dl[:,i]),vetor([-1,0,0]),i-1)
+                else: Dl[:,i]  = restringe_junta2(vetor(Dl[:,i]),vetor([1,0,0]),i-1)
             else: #Se a junta prev for Hinge (7)
                 pl[:,i] = iteracao_Fabrik(p[:,i+1],pl[:,i-1],b[i-1],Dl[:,i-1])[:,0]
                 pl[:,i] = restringe_junta(pl[:,i],pl[0:3,i-1],pl[0:3,i-2],i-1)
@@ -257,7 +257,7 @@ for i in range(7):
 #Calcula um vetor v que seja ortogonal ao vetor de refência para o cálculo dos ângulos 
 for i in range(7):
     if(i == 0):
-        vref = -x
+        vref = x
     elif(i == 6):
         vref = vetor(p[:,6] - p[:,5])
         vref = vref/norm(vref)
